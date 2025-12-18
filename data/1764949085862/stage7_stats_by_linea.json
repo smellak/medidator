@@ -1,0 +1,38 @@
+[
+  {
+    "groupValue": "101",
+    "totalRows": 20,
+    "conPackM3": 0,
+    "conProductoM3": 20,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "0",
+    "totalRows": 3,
+    "conPackM3": 0,
+    "conProductoM3": 3,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "1",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "3",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  }
+]

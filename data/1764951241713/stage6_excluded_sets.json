@@ -1,0 +1,21 @@
+[
+  {
+    "COD.ARTICULO": "00740001010366",
+    "Linea": 101,
+    "Marca": 0,
+    "Descripcion del proveedor": "JUEGO DE PIE MACAO WENKO 22511",
+    "Alto": 0,
+    "Ancho": 0,
+    "Largo": 0,
+    "M3": 0,
+    "Bultos": 1,
+    "EAN-code": "2000062979953",
+    "FAMILIA": "00003.00001.00003.00004",
+    "PESO_NETO": 0,
+    "PESO_BRUTO": 0,
+    "MEDIDAS COLECCION": "<p>Alto 70,5 cm</p> <p>Ancho 21 cm</p>",
+    "paquete_estimable": false,
+    "producto_m3": null,
+    "es_conjunto": true
+  }
+]

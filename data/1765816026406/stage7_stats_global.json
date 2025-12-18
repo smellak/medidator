@@ -1,0 +1,19 @@
+{
+  "totalRows": 15050,
+  "conMedidasProducto": 10067,
+  "conProductoM3": 10067,
+  "conMedidasPack": 0,
+  "conPackM3": 0,
+  "conRatio": 0,
+  "conPaqueteEstimable": 6365,
+  "conGemini": 0,
+  "producto_m3_stats": {
+    "count": 10067,
+    "mean": 0.9021669095820092,
+    "median": 0.40176,
+    "p25": 0.1375725,
+    "p75": 1.2312
+  },
+  "pack_m3_stats": null,
+  "ratio_pack_vs_producto_stats": null
+}

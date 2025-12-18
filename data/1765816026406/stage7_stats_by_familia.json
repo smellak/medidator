@@ -1,0 +1,2684 @@
+[
+  {
+    "groupValue": "00001.00057.00002.00008",
+    "totalRows": 1236,
+    "conPackM3": 0,
+    "conProductoM3": 1174,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 94.98381877022653,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00057.00002.00004",
+    "totalRows": 1206,
+    "conPackM3": 0,
+    "conProductoM3": 1024,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 84.90878938640132,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00057.00002.00002",
+    "totalRows": 675,
+    "conPackM3": 0,
+    "conProductoM3": 552,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 81.77777777777779,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00059.00001.00009",
+    "totalRows": 670,
+    "conPackM3": 0,
+    "conProductoM3": 45,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 6.7164179104477615,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00057.00002.00001",
+    "totalRows": 667,
+    "conPackM3": 0,
+    "conProductoM3": 623,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 93.4032983508246,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00056.00001.00006",
+    "totalRows": 622,
+    "conPackM3": 0,
+    "conProductoM3": 568,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 91.31832797427653,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00003.00002.00002.00002",
+    "totalRows": 521,
+    "conPackM3": 0,
+    "conProductoM3": 520,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 99.80806142034548,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00052.00001.00002",
+    "totalRows": 433,
+    "conPackM3": 0,
+    "conProductoM3": 428,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 98.84526558891456,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00059.00001.00001",
+    "totalRows": 350,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0.5714285714285714,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00003.00002.00002.00001",
+    "totalRows": 326,
+    "conPackM3": 0,
+    "conProductoM3": 300,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 92.02453987730061,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00057.00002.00013",
+    "totalRows": 263,
+    "conPackM3": 0,
+    "conProductoM3": 230,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 87.45247148288973,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00013.00001.00004",
+    "totalRows": 250,
+    "conPackM3": 0,
+    "conProductoM3": 14,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 5.6000000000000005,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00032.00010",
+    "totalRows": 220,
+    "conPackM3": 0,
+    "conProductoM3": 31,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 14.09090909090909,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00053.00001.00001",
+    "totalRows": 219,
+    "conPackM3": 0,
+    "conProductoM3": 158,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 72.14611872146118,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00015.00001.00008",
+    "totalRows": 191,
+    "conPackM3": 0,
+    "conProductoM3": 43,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 22.5130890052356,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00059.00001.00003",
+    "totalRows": 188,
+    "conPackM3": 0,
+    "conProductoM3": 3,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 1.5957446808510638,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00050.00001.00002",
+    "totalRows": 179,
+    "conPackM3": 0,
+    "conProductoM3": 89,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 49.72067039106145,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00053.00002.00001",
+    "totalRows": 179,
+    "conPackM3": 0,
+    "conProductoM3": 116,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 64.80446927374301,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00003.00001",
+    "totalRows": 177,
+    "conPackM3": 0,
+    "conProductoM3": 131,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 74.01129943502825,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00015.00001.00001",
+    "totalRows": 177,
+    "conPackM3": 0,
+    "conProductoM3": 122,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 68.92655367231639,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00057.00002.00003",
+    "totalRows": 164,
+    "conPackM3": 0,
+    "conProductoM3": 132,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 80.48780487804879,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00001.00004",
+    "totalRows": 144,
+    "conPackM3": 0,
+    "conProductoM3": 10,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 6.944444444444445,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00059.00001.00010",
+    "totalRows": 142,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 1.4084507042253522,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00002.00003",
+    "totalRows": 141,
+    "conPackM3": 0,
+    "conProductoM3": 104,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 73.75886524822694,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00005.00001",
+    "totalRows": 126,
+    "conPackM3": 0,
+    "conProductoM3": 89,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 70.63492063492063,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00002.00001",
+    "totalRows": 126,
+    "conPackM3": 0,
+    "conProductoM3": 9,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 7.142857142857142,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00002.00001",
+    "totalRows": 122,
+    "conPackM3": 0,
+    "conProductoM3": 94,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 77.04918032786885,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00056.00001.00099",
+    "totalRows": 120,
+    "conPackM3": 0,
+    "conProductoM3": 110,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 91.66666666666666,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00001.00002",
+    "totalRows": 117,
+    "conPackM3": 0,
+    "conProductoM3": 70,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 59.82905982905983,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00053.00002.00003",
+    "totalRows": 105,
+    "conPackM3": 0,
+    "conProductoM3": 79,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 75.23809523809524,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00057.00002.00005",
+    "totalRows": 104,
+    "conPackM3": 0,
+    "conProductoM3": 87,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 83.65384615384616,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00003.00002",
+    "totalRows": 100,
+    "conPackM3": 0,
+    "conProductoM3": 61,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 61,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00001.00009",
+    "totalRows": 98,
+    "conPackM3": 0,
+    "conProductoM3": 46,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 46.93877551020408,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00055.00001.00001",
+    "totalRows": 91,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00002.00002",
+    "totalRows": 85,
+    "conPackM3": 0,
+    "conProductoM3": 54,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 63.52941176470588,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00055.00002.00003",
+    "totalRows": 84,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00055.00002.00009",
+    "totalRows": 80,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00052.00002.00001",
+    "totalRows": 79,
+    "conPackM3": 0,
+    "conProductoM3": 73,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 92.40506329113924,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00052.00002.00101",
+    "totalRows": 77,
+    "conPackM3": 0,
+    "conProductoM3": 73,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 94.8051948051948,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00001.00003",
+    "totalRows": 76,
+    "conPackM3": 0,
+    "conProductoM3": 35,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 46.05263157894737,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00050.00001.00005",
+    "totalRows": 76,
+    "conPackM3": 0,
+    "conProductoM3": 61,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 80.26315789473685,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00058.00001.00001",
+    "totalRows": 72,
+    "conPackM3": 0,
+    "conProductoM3": 71,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 98.61111111111111,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00060.00004.00001",
+    "totalRows": 70,
+    "conPackM3": 0,
+    "conProductoM3": 63,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 90,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00003.00003",
+    "totalRows": 70,
+    "conPackM3": 0,
+    "conProductoM3": 12,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 17.142857142857142,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00055.00002.00006",
+    "totalRows": 70,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00057.00002.00015",
+    "totalRows": 70,
+    "conPackM3": 0,
+    "conProductoM3": 65,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 92.85714285714286,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00001.00099",
+    "totalRows": 68,
+    "conPackM3": 0,
+    "conProductoM3": 10,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 14.705882352941178,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00052.00001.00003",
+    "totalRows": 67,
+    "conPackM3": 0,
+    "conProductoM3": 60,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 89.55223880597015,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00056.00001.00018",
+    "totalRows": 66,
+    "conPackM3": 0,
+    "conProductoM3": 62,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 93.93939393939394,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00013.00001.00099",
+    "totalRows": 65,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 1.5384615384615385,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00056.00001.00013",
+    "totalRows": 63,
+    "conPackM3": 0,
+    "conProductoM3": 21,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 33.33333333333333,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00003.00013.00001",
+    "totalRows": 61,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 1.639344262295082,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00056.00001.00011",
+    "totalRows": 61,
+    "conPackM3": 0,
+    "conProductoM3": 58,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 95.08196721311475,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00012",
+    "totalRows": 60,
+    "conPackM3": 0,
+    "conProductoM3": 10,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 16.666666666666664,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00058.00001.00011",
+    "totalRows": 59,
+    "conPackM3": 0,
+    "conProductoM3": 53,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 89.83050847457628,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00027.00002",
+    "totalRows": 55,
+    "conPackM3": 0,
+    "conProductoM3": 54,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 98.18181818181819,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00055.00005.00006",
+    "totalRows": 55,
+    "conPackM3": 0,
+    "conProductoM3": 8,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 14.545454545454545,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00004.00001",
+    "totalRows": 53,
+    "conPackM3": 0,
+    "conProductoM3": 43,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 81.13207547169812,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00056.00001.00006.00002",
+    "totalRows": 53,
+    "conPackM3": 0,
+    "conProductoM3": 52,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 98.11320754716981,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00056.00001.00017",
+    "totalRows": 53,
+    "conPackM3": 0,
+    "conProductoM3": 49,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 92.45283018867924,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00059.00001.00002",
+    "totalRows": 53,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00051.00001.00012",
+    "totalRows": 52,
+    "conPackM3": 0,
+    "conProductoM3": 46,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 88.46153846153845,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00001.00003",
+    "totalRows": 52,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 3.8461538461538463,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00003.00005",
+    "totalRows": 51,
+    "conPackM3": 0,
+    "conProductoM3": 30,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 58.82352941176471,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00001.00001",
+    "totalRows": 50,
+    "conPackM3": 0,
+    "conProductoM3": 37,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 74,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00015.00001.00005",
+    "totalRows": 50,
+    "conPackM3": 0,
+    "conProductoM3": 45,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 90,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00003.00002.00002.00004",
+    "totalRows": 49,
+    "conPackM3": 0,
+    "conProductoM3": 49,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00008.00002",
+    "totalRows": 48,
+    "conPackM3": 0,
+    "conProductoM3": 6,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 12.5,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00032.00009",
+    "totalRows": 48,
+    "conPackM3": 0,
+    "conProductoM3": 48,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00010.00001",
+    "totalRows": 47,
+    "conPackM3": 0,
+    "conProductoM3": 21,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 44.680851063829785,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00011.00002",
+    "totalRows": 46,
+    "conPackM3": 0,
+    "conProductoM3": 45,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 97.82608695652173,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00015.00001.00004",
+    "totalRows": 44,
+    "conPackM3": 0,
+    "conProductoM3": 30,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 68.18181818181817,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00001.00002",
+    "totalRows": 44,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00058.00001.00002",
+    "totalRows": 44,
+    "conPackM3": 0,
+    "conProductoM3": 42,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 95.45454545454545,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00060.00001.00001",
+    "totalRows": 43,
+    "conPackM3": 0,
+    "conProductoM3": 26,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 60.46511627906976,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00052.00002.00104",
+    "totalRows": 42,
+    "conPackM3": 0,
+    "conProductoM3": 42,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00001.00001.00001",
+    "totalRows": 41,
+    "conPackM3": 0,
+    "conProductoM3": 41,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00001.00001.00002",
+    "totalRows": 41,
+    "conPackM3": 0,
+    "conProductoM3": 41,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00052.00001.00004",
+    "totalRows": 41,
+    "conPackM3": 0,
+    "conProductoM3": 41,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00056.00001.00010",
+    "totalRows": 39,
+    "conPackM3": 0,
+    "conProductoM3": 33,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 84.61538461538461,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00056.00001.00019",
+    "totalRows": 38,
+    "conPackM3": 0,
+    "conProductoM3": 32,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 84.21052631578947,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00001.00001.00004",
+    "totalRows": 35,
+    "conPackM3": 0,
+    "conProductoM3": 35,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00055.00002.00005",
+    "totalRows": 35,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00005",
+    "totalRows": 34,
+    "conPackM3": 0,
+    "conProductoM3": 29,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 85.29411764705883,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00026",
+    "totalRows": 34,
+    "conPackM3": 0,
+    "conProductoM3": 34,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00001.00001.00003",
+    "totalRows": 34,
+    "conPackM3": 0,
+    "conProductoM3": 33,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 97.05882352941177,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00051.00001.00011",
+    "totalRows": 34,
+    "conPackM3": 0,
+    "conProductoM3": 32,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 94.11764705882352,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00050.00001.00015",
+    "totalRows": 33,
+    "conPackM3": 0,
+    "conProductoM3": 26,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 78.78787878787878,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00008.00001",
+    "totalRows": 30,
+    "conPackM3": 0,
+    "conProductoM3": 16,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 53.333333333333336,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00055.00002.00007",
+    "totalRows": 30,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00056.00001.00007",
+    "totalRows": 30,
+    "conPackM3": 0,
+    "conProductoM3": 20,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 66.66666666666666,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00003.00007",
+    "totalRows": 28,
+    "conPackM3": 0,
+    "conProductoM3": 26,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 92.85714285714286,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00005.00002",
+    "totalRows": 27,
+    "conPackM3": 0,
+    "conProductoM3": 22,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 81.48148148148148,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00002.00099",
+    "totalRows": 26,
+    "conPackM3": 0,
+    "conProductoM3": 17,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 65.38461538461539,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00003.00001",
+    "totalRows": 26,
+    "conPackM3": 0,
+    "conProductoM3": 26,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00003.00001.00001.00004",
+    "totalRows": 25,
+    "conPackM3": 0,
+    "conProductoM3": 24,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 96,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00055.00002.00008",
+    "totalRows": 24,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00058.00001.00010",
+    "totalRows": 24,
+    "conPackM3": 0,
+    "conProductoM3": 23,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 95.83333333333334,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00057.00002.00017",
+    "totalRows": 24,
+    "conPackM3": 0,
+    "conProductoM3": 24,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00015.00001.00002",
+    "totalRows": 23,
+    "conPackM3": 0,
+    "conProductoM3": 19,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 82.6086956521739,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00056.00001.00015",
+    "totalRows": 23,
+    "conPackM3": 0,
+    "conProductoM3": 18,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 78.26086956521739,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00057.00002.00009",
+    "totalRows": 23,
+    "conPackM3": 0,
+    "conProductoM3": 17,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 73.91304347826086,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00058.00001.00013",
+    "totalRows": 23,
+    "conPackM3": 0,
+    "conProductoM3": 23,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00057.00002.00011",
+    "totalRows": 23,
+    "conPackM3": 0,
+    "conProductoM3": 15,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 65.21739130434783,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00001.00001.00005",
+    "totalRows": 22,
+    "conPackM3": 0,
+    "conProductoM3": 22,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00058.00001.00004",
+    "totalRows": 22,
+    "conPackM3": 0,
+    "conProductoM3": 9,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 40.909090909090914,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00001.00008",
+    "totalRows": 21,
+    "conPackM3": 0,
+    "conProductoM3": 7,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 33.33333333333333,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00058.00001.00099",
+    "totalRows": 21,
+    "conPackM3": 0,
+    "conProductoM3": 21,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00051.00002.00001",
+    "totalRows": 20,
+    "conPackM3": 0,
+    "conProductoM3": 19,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 95,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00057.00002.00006",
+    "totalRows": 20,
+    "conPackM3": 0,
+    "conProductoM3": 16,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 80,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00003.00001.00002.00099",
+    "totalRows": 19,
+    "conPackM3": 0,
+    "conProductoM3": 9,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 47.368421052631575,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00001.00001.00006",
+    "totalRows": 19,
+    "conPackM3": 0,
+    "conProductoM3": 19,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00056.00001",
+    "totalRows": 19,
+    "conPackM3": 0,
+    "conProductoM3": 19,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00001.00004",
+    "totalRows": 18,
+    "conPackM3": 0,
+    "conProductoM3": 11,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 61.111111111111114,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00003.00011",
+    "totalRows": 18,
+    "conPackM3": 0,
+    "conProductoM3": 9,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 50,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00002.00009",
+    "totalRows": 18,
+    "conPackM3": 0,
+    "conProductoM3": 14,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 77.77777777777779,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00050",
+    "totalRows": 18,
+    "conPackM3": 0,
+    "conProductoM3": 13,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 72.22222222222221,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00052.00002.00003",
+    "totalRows": 18,
+    "conPackM3": 0,
+    "conProductoM3": 18,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00055.00003.00001",
+    "totalRows": 18,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00058.00001.00005",
+    "totalRows": 18,
+    "conPackM3": 0,
+    "conProductoM3": 18,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00002.00003",
+    "totalRows": 17,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 11.76470588235294,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00055.00001.00002",
+    "totalRows": 17,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00057.00002.00016",
+    "totalRows": 17,
+    "conPackM3": 0,
+    "conProductoM3": 14,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 82.35294117647058,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00020",
+    "totalRows": 16,
+    "conPackM3": 0,
+    "conProductoM3": 9,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 56.25,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00027.00001",
+    "totalRows": 16,
+    "conPackM3": 0,
+    "conProductoM3": 15,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 93.75,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00050.00001.00006",
+    "totalRows": 16,
+    "conPackM3": 0,
+    "conProductoM3": 16,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00050.00001.00001",
+    "totalRows": 16,
+    "conPackM3": 0,
+    "conProductoM3": 8,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 50,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00053.00002.00002",
+    "totalRows": 16,
+    "conPackM3": 0,
+    "conProductoM3": 9,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 56.25,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00056.00003",
+    "totalRows": 16,
+    "conPackM3": 0,
+    "conProductoM3": 16,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00030",
+    "totalRows": 15,
+    "conPackM3": 0,
+    "conProductoM3": 12,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 80,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00053.00003.00001",
+    "totalRows": 15,
+    "conPackM3": 0,
+    "conProductoM3": 15,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00051.00001.00024",
+    "totalRows": 14,
+    "conPackM3": 0,
+    "conProductoM3": 14,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00051.00001.00006",
+    "totalRows": 14,
+    "conPackM3": 0,
+    "conProductoM3": 13,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 92.85714285714286,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00051.00001.00033",
+    "totalRows": 14,
+    "conPackM3": 0,
+    "conProductoM3": 14,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00003.00099",
+    "totalRows": 14,
+    "conPackM3": 0,
+    "conProductoM3": 13,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 92.85714285714286,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00001.00005",
+    "totalRows": 14,
+    "conPackM3": 0,
+    "conProductoM3": 4,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 28.57142857142857,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00057.00002.00007",
+    "totalRows": 14,
+    "conPackM3": 0,
+    "conProductoM3": 14,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00001.00001",
+    "totalRows": 13,
+    "conPackM3": 0,
+    "conProductoM3": 5,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 38.46153846153847,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00003.00011.00005",
+    "totalRows": 13,
+    "conPackM3": 0,
+    "conProductoM3": 12,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 92.3076923076923,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00013.00006",
+    "totalRows": 13,
+    "conPackM3": 0,
+    "conProductoM3": 11,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 84.61538461538461,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00051.00001.00003",
+    "totalRows": 13,
+    "conPackM3": 0,
+    "conProductoM3": 12,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 92.3076923076923,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00050.00001.00011",
+    "totalRows": 12,
+    "conPackM3": 0,
+    "conProductoM3": 12,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00055.00002.00001",
+    "totalRows": 12,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00003.00001.00001.00002",
+    "totalRows": 11,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 9.090909090909092,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00003.00001.00009",
+    "totalRows": 11,
+    "conPackM3": 0,
+    "conProductoM3": 8,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 72.72727272727273,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00019",
+    "totalRows": 11,
+    "conPackM3": 0,
+    "conProductoM3": 7,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 63.63636363636363,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00029",
+    "totalRows": 11,
+    "conPackM3": 0,
+    "conProductoM3": 11,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00011.00022",
+    "totalRows": 11,
+    "conPackM3": 0,
+    "conProductoM3": 10,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 90.9090909090909,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00051.00001.00004",
+    "totalRows": 11,
+    "conPackM3": 0,
+    "conProductoM3": 10,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 90.9090909090909,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00055.00006.00002",
+    "totalRows": 11,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00011",
+    "totalRows": 10,
+    "conPackM3": 0,
+    "conProductoM3": 7,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 70,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00058.00001.00012",
+    "totalRows": 10,
+    "conPackM3": 0,
+    "conProductoM3": 10,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00001.00001",
+    "totalRows": 10,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00059.00001.00004",
+    "totalRows": 10,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00001.00001.00007",
+    "totalRows": 9,
+    "conPackM3": 0,
+    "conProductoM3": 9,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00058.00001.00008",
+    "totalRows": 9,
+    "conPackM3": 0,
+    "conProductoM3": 9,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00003.00001.00001.00001",
+    "totalRows": 8,
+    "conPackM3": 0,
+    "conProductoM3": 7,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 87.5,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00003.00006.00002",
+    "totalRows": 8,
+    "conPackM3": 0,
+    "conProductoM3": 6,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 75,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00003.00011.00011",
+    "totalRows": 8,
+    "conPackM3": 0,
+    "conProductoM3": 7,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 87.5,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00015.00001.00007",
+    "totalRows": 8,
+    "conPackM3": 0,
+    "conProductoM3": 7,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 87.5,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00011.00016",
+    "totalRows": 8,
+    "conPackM3": 0,
+    "conProductoM3": 3,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 37.5,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00051.00003",
+    "totalRows": 8,
+    "conPackM3": 0,
+    "conProductoM3": 7,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 87.5,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00003.00002",
+    "totalRows": 8,
+    "conPackM3": 0,
+    "conProductoM3": 8,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00057.00002.00018",
+    "totalRows": 8,
+    "conPackM3": 0,
+    "conProductoM3": 8,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00060.00002.00001",
+    "totalRows": 8,
+    "conPackM3": 0,
+    "conProductoM3": 7,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 87.5,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00003.00001.00002.00008",
+    "totalRows": 7,
+    "conPackM3": 0,
+    "conProductoM3": 5,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 71.42857142857143,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00003.00006",
+    "totalRows": 7,
+    "conPackM3": 0,
+    "conProductoM3": 4,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 57.14285714285714,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00051.00001.00001",
+    "totalRows": 7,
+    "conPackM3": 0,
+    "conProductoM3": 6,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 85.71428571428571,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00051.00001.00014",
+    "totalRows": 7,
+    "conPackM3": 0,
+    "conProductoM3": 5,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 71.42857142857143,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00051.00001.00002",
+    "totalRows": 7,
+    "conPackM3": 0,
+    "conProductoM3": 7,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00057.00002.00010",
+    "totalRows": 7,
+    "conPackM3": 0,
+    "conProductoM3": 7,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00056.00001.00006.00001",
+    "totalRows": 7,
+    "conPackM3": 0,
+    "conProductoM3": 7,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00056.00001.00009",
+    "totalRows": 7,
+    "conPackM3": 0,
+    "conProductoM3": 7,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00060.00003.00003",
+    "totalRows": 7,
+    "conPackM3": 0,
+    "conProductoM3": 4,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 57.14285714285714,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00005.00007",
+    "totalRows": 6,
+    "conPackM3": 0,
+    "conProductoM3": 5,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 83.33333333333334,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00028",
+    "totalRows": 6,
+    "conPackM3": 0,
+    "conProductoM3": 5,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 83.33333333333334,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00015.00001.00009",
+    "totalRows": 6,
+    "conPackM3": 0,
+    "conProductoM3": 3,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 50,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00050.00001.00003",
+    "totalRows": 6,
+    "conPackM3": 0,
+    "conProductoM3": 5,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 83.33333333333334,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00053.00002.00004",
+    "totalRows": 6,
+    "conPackM3": 0,
+    "conProductoM3": 6,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00003.00008",
+    "totalRows": 6,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 33.33333333333333,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00004.00002",
+    "totalRows": 6,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 16.666666666666664,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00055.00005.00003",
+    "totalRows": 6,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00056.00001.00003",
+    "totalRows": 6,
+    "conPackM3": 0,
+    "conProductoM3": 5,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 83.33333333333334,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00050.00001.00012",
+    "totalRows": 6,
+    "conPackM3": 0,
+    "conProductoM3": 6,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00003.00001.00001.00006",
+    "totalRows": 5,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 40,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00004",
+    "totalRows": 5,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 20,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00002.00011",
+    "totalRows": 5,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 20,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00018",
+    "totalRows": 5,
+    "conPackM3": 0,
+    "conProductoM3": 5,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00005.00001",
+    "totalRows": 5,
+    "conPackM3": 0,
+    "conProductoM3": 5,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00003.00009",
+    "totalRows": 5,
+    "conPackM3": 0,
+    "conProductoM3": 5,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00004.00004",
+    "totalRows": 5,
+    "conPackM3": 0,
+    "conProductoM3": 4,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 80,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00050.00001.00004",
+    "totalRows": 5,
+    "conPackM3": 0,
+    "conProductoM3": 5,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00004.00001",
+    "totalRows": 5,
+    "conPackM3": 0,
+    "conProductoM3": 4,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 80,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00003.00009",
+    "totalRows": 5,
+    "conPackM3": 0,
+    "conProductoM3": 3,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 60,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00056.00001.00016",
+    "totalRows": 5,
+    "conPackM3": 0,
+    "conProductoM3": 5,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00003.00006.00001",
+    "totalRows": 4,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 50,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00002.00005",
+    "totalRows": 4,
+    "conPackM3": 0,
+    "conProductoM3": 3,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 75,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00007",
+    "totalRows": 4,
+    "conPackM3": 0,
+    "conProductoM3": 4,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00004.00003",
+    "totalRows": 4,
+    "conPackM3": 0,
+    "conProductoM3": 4,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00027",
+    "totalRows": 4,
+    "conPackM3": 0,
+    "conProductoM3": 4,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00013.00006.00002",
+    "totalRows": 4,
+    "conPackM3": 0,
+    "conProductoM3": 4,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00044.00007",
+    "totalRows": 4,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 25,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00050.00001",
+    "totalRows": 4,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 50,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00013.00002.00001",
+    "totalRows": 4,
+    "conPackM3": 0,
+    "conProductoM3": 4,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00050.00001.00017",
+    "totalRows": 4,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 50,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00051.00001.00007",
+    "totalRows": 4,
+    "conPackM3": 0,
+    "conProductoM3": 3,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 75,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00051.00002.00003",
+    "totalRows": 4,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00052.00001.00001",
+    "totalRows": 4,
+    "conPackM3": 0,
+    "conProductoM3": 4,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00055.00005.00099",
+    "totalRows": 4,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00056.00001.00008",
+    "totalRows": 4,
+    "conPackM3": 0,
+    "conProductoM3": 4,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00056.00001.00002",
+    "totalRows": 4,
+    "conPackM3": 0,
+    "conProductoM3": 4,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00052.00002.00004",
+    "totalRows": 3,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 66.66666666666666,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00005.00004",
+    "totalRows": 3,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 66.66666666666666,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00005.00005",
+    "totalRows": 3,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 66.66666666666666,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00003.00099",
+    "totalRows": 3,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00001.00099",
+    "totalRows": 3,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 33.33333333333333,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00013.00005",
+    "totalRows": 3,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 66.66666666666666,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00022.00002",
+    "totalRows": 3,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 66.66666666666666,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00050.00001.00016",
+    "totalRows": 3,
+    "conPackM3": 0,
+    "conProductoM3": 3,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00050.00001.00003.00002",
+    "totalRows": 3,
+    "conPackM3": 0,
+    "conProductoM3": 3,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00052.00001.00006",
+    "totalRows": 3,
+    "conPackM3": 0,
+    "conProductoM3": 3,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00052",
+    "totalRows": 3,
+    "conPackM3": 0,
+    "conProductoM3": 3,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00052.00001.00099",
+    "totalRows": 3,
+    "conPackM3": 0,
+    "conProductoM3": 3,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00057.00002.00012",
+    "totalRows": 3,
+    "conPackM3": 0,
+    "conProductoM3": 3,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00003.00006",
+    "totalRows": 3,
+    "conPackM3": 0,
+    "conProductoM3": 3,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00002.00004",
+    "totalRows": 3,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00052.00002.00102",
+    "totalRows": 3,
+    "conPackM3": 0,
+    "conProductoM3": 3,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00057.00002.00099",
+    "totalRows": 3,
+    "conPackM3": 0,
+    "conProductoM3": 3,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00003.00001.00002.00010",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00002.00001.00005",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00003.00001.00008",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00002.00010",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 50,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00022",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 50,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00010",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00013",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 50,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00002.00003",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 50,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00003.00003",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00015",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 50,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00003",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00003.00013.00002",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00016",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00035",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00051.00001",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00051.00002",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00002.00005",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00015.00001.00006",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 50,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00051.00002.00006",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 50,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00050.00001.00009",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 50,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00050.00001.00010",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 50,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00051.00002.00002",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00052.00002.00100",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00053.00004.00001",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00058.00001.00007",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00052.00002",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00055.00001",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00003.00001.00003.00002",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00001.00003.00004",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00002.00001.00003",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00001.00003.00003",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00009",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00002.00001.00006",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00002.00004",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00003.00011.00008",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00034",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00033",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00003.00013.00003",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00003.00011.00004",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00014",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00002.00001",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00002.00007",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00031",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00007.00001.00099",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00032.00004",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00013.00007",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00001.00001.00008",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00042.00001",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00022.00008",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00011.00026.00007",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00013.00003",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00050.00001.00014",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00050.00001.00003.00001",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00051.00002.00004",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00051.00001.00005",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00052.00002.00099",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00002.00002",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054.00002.00005",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00055.00004.00099",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00051.00001.00031",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00055.00004",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00056.00001.00021",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00051.00001.00013",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00006.00010.00001",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00056.00001.00004",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00058.00001.00003",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00058.00001.00006",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00058.00001",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00059.00001.00006",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 0,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 0,
+    "conGemini": 0
+  }
+]

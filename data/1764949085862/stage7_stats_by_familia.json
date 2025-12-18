@@ -1,0 +1,101 @@
+[
+  {
+    "groupValue": "00003.00001.00002.00099",
+    "totalRows": 6,
+    "conPackM3": 0,
+    "conProductoM3": 6,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00003.00001.00001.00006",
+    "totalRows": 5,
+    "conPackM3": 0,
+    "conProductoM3": 5,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00003.00001.00001.00004",
+    "totalRows": 4,
+    "conPackM3": 0,
+    "conProductoM3": 4,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00002.00006.00002.00001",
+    "totalRows": 3,
+    "conPackM3": 0,
+    "conProductoM3": 3,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00054",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00003.00001.00001.00001",
+    "totalRows": 2,
+    "conPackM3": 0,
+    "conProductoM3": 2,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00052.00002",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00001.00052.00002.00004",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00003.00001.00002.00008",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00003.00001.00001.00002",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  },
+  {
+    "groupValue": "00003.00001.00002.00010",
+    "totalRows": 1,
+    "conPackM3": 0,
+    "conProductoM3": 1,
+    "pctConPackM3": 0,
+    "pctConProductoM3": 100,
+    "conGemini": 0
+  }
+]
