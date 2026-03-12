@@ -18,6 +18,9 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
+# Install curl for health checks
+RUN apk add --no-cache curl
+
 # Non-root user
 RUN addgroup -g 1001 -S medidas && adduser -u 1001 -S medidas -G medidas
 
