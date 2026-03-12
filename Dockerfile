@@ -31,8 +31,12 @@ COPY --from=builder /app/dist ./dist
 # Copy frontend static files (if any)
 COPY dist-ui/ ./dist-ui/
 
-# Persistent data directories
-RUN mkdir -p uploads data && chown -R medidas:medidas uploads data dist-ui
+# Copy existing data and uploads (seed data)
+COPY data/ ./data/
+COPY uploads/ ./uploads/
+
+# Ensure ownership
+RUN chown -R medidas:medidas uploads data dist-ui
 
 USER medidas
 EXPOSE 3000
