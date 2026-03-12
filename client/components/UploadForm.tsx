@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { Upload, FileSpreadsheet, CheckCircle, XCircle } from 'lucide-react';
 import type { Job } from '../types';
 import { createJob } from '../api';
 
@@ -42,55 +43,70 @@ export default function UploadForm({ onJobCreated }: Props) {
 
   return (
     <div
-      className={`bg-white rounded-xl shadow-sm p-6 transition-all ${dragOver ? 'ring-2 ring-chs-primary bg-chs-light' : ''}`}
+      className={`bg-surface-card border rounded-lg shadow-sm transition-all ${
+        dragOver ? 'ring-2 ring-app-primary border-app-primary' : 'border-border'
+      }`}
       onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
       onDragLeave={() => setDragOver(false)}
       onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]); }}
     >
-      <h2 className="text-lg font-semibold text-gray-800 mb-3">Subir Archivo Excel</h2>
+      <div className="p-5">
+        <h2 className="text-base font-bold text-text-primary mb-3" style={{ fontFamily: 'var(--font-inter)' }}>
+          Subir Archivo Excel
+        </h2>
 
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-chs-primary transition-colors">
-        <svg className="w-10 h-10 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-        </svg>
-        <p className="text-gray-500 text-sm mb-3">
-          {file ? file.name : 'Arrastra un archivo Excel aquí o haz clic para seleccionar'}
-        </p>
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".xlsx,.xls"
-          className="hidden"
-          onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
-        />
-        <div className="flex items-center justify-center gap-3">
-          <button
-            onClick={() => inputRef.current?.click()}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
-          >
-            Seleccionar Archivo
-          </button>
-          {file && (
+        <div className="border-2 border-dashed border-border rounded-md p-6 text-center hover:border-app-primary transition-colors cursor-pointer"
+          onClick={() => inputRef.current?.click()}
+        >
+          {file ? (
+            <FileSpreadsheet className="w-10 h-10 mx-auto text-app-primary mb-2" />
+          ) : (
+            <Upload className="w-10 h-10 mx-auto text-text-muted mb-2" />
+          )}
+          <p className="text-text-secondary text-sm">
+            {file ? file.name : 'Arrastra un archivo .xlsx aquí o haz clic para seleccionar'}
+          </p>
+          <input
+            ref={inputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            className="hidden"
+            onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+          />
+        </div>
+
+        {file && (
+          <div className="mt-3 flex justify-end">
             <button
               onClick={handleSubmit}
               disabled={uploading}
-              className="px-4 py-2 bg-chs-primary text-white rounded-lg text-sm font-medium hover:bg-chs-dark transition-colors disabled:opacity-50"
+              className="px-5 py-2 rounded-md text-sm font-semibold text-white transition-all disabled:opacity-50"
+              style={{
+                fontFamily: 'var(--font-inter)',
+                background: 'linear-gradient(135deg, #1565C0, #1976D2)',
+                border: '1px solid rgba(21, 101, 192, 0.6)',
+              }}
             >
               {uploading ? 'Subiendo...' : 'Crear Job'}
             </button>
-          )}
-        </div>
-      </div>
+          </div>
+        )}
 
-      {message && (
-        <div className={`mt-3 px-4 py-2 rounded-lg text-sm ${
-          message.type === 'success'
-            ? 'bg-chs-success-light text-chs-success'
-            : 'bg-chs-error-light text-chs-error'
-        }`}>
-          {message.text}
-        </div>
-      )}
+        {message && (
+          <div className={`mt-3 flex items-center gap-2 px-4 py-2.5 rounded-md text-sm ${
+            message.type === 'success'
+              ? 'bg-emerald-50 text-emerald-700'
+              : 'bg-red-50 text-red-700'
+          }`}>
+            {message.type === 'success' ? (
+              <CheckCircle className="w-4 h-4 flex-shrink-0" />
+            ) : (
+              <XCircle className="w-4 h-4 flex-shrink-0" />
+            )}
+            {message.text}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

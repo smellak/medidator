@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Ruler, Activity, ArrowLeft } from 'lucide-react';
 import type { Job } from './types';
 import { fetchJobs, fetchHealth } from './api';
 import StatsCards from './components/StatsCards';
@@ -48,60 +49,89 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-chs-primary to-chs-dark">
-      {/* Header */}
-      <header className="px-4 pt-6 pb-2">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div
-              className="flex items-center gap-3 cursor-pointer"
-              onClick={() => setView({ type: 'dashboard' })}
-            >
-              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
+    <div className="min-h-screen bg-surface">
+      {/* Hero Header */}
+      <div className="chs-hero-gradient relative overflow-hidden">
+        <div className="dot-pattern absolute inset-0" />
+        <div className="relative max-w-7xl mx-auto px-6 pt-8 pb-14">
+          <div className="flex items-center justify-between animate-fade-in">
+            <div className="flex items-center gap-4">
+              {view.type === 'detail' ? (
+                <button
+                  onClick={() => setView({ type: 'dashboard' })}
+                  className="w-12 h-12 rounded-md flex items-center justify-center bg-white/10 hover:bg-white/20 transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5 text-white" />
+                </button>
+              ) : (
+                <div
+                  className="w-12 h-12 rounded-md flex items-center justify-center shadow-lg"
+                  style={{ background: 'linear-gradient(135deg, #22d3ee 0%, #0e7490 100%)' }}
+                >
+                  <Ruler className="w-6 h-6 text-white" />
+                </div>
+              )}
               <div>
-                <h1 className="text-2xl font-bold text-white">Procesador de Medidas</h1>
-                <p className="text-white/70 text-sm">Pipeline de Procesamiento Excel — CHS Platform</p>
+                <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'var(--font-inter)' }}>
+                  {view.type === 'detail' ? 'Detalle de Job' : 'Procesador de Medidas'}
+                </h1>
+                <p className="text-white/60 text-sm mt-0.5">
+                  Pipeline de procesamiento Excel — CHS Platform
+                </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className={`inline-block w-2.5 h-2.5 rounded-full ${serverUp ? 'bg-green-400' : 'bg-red-400'}`} />
-              <span className="text-white/80 text-sm">{serverUp ? 'Servidor activo' : 'Sin conexión'}</span>
+            <div className="flex items-center gap-2.5">
+              <span className="relative flex h-2.5 w-2.5">
+                {serverUp && (
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                )}
+                <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${serverUp ? 'bg-green-500' : 'bg-red-500'}`} />
+              </span>
+              <span className="text-white/60 text-xs font-medium" style={{ fontFamily: 'var(--font-inter)', letterSpacing: '0.5px' }}>
+                {serverUp ? 'Servidor activo' : 'Sin conexión'}
+              </span>
             </div>
           </div>
-        </div>
-      </header>
 
-      {/* Content */}
-      <main className="px-4 py-4 pb-8">
-        <div className="max-w-7xl mx-auto">
-          {error && (
-            <div className="mb-4 bg-chs-error-light border border-chs-error/20 text-chs-error rounded-xl px-4 py-3 text-sm">
-              {error}
+          {/* Glass Stats (only on dashboard) */}
+          {view.type === 'dashboard' && (
+            <div className="mt-6 animate-fade-in-up stagger-2">
+              <StatsCards jobs={jobs} />
             </div>
           )}
+        </div>
+      </div>
 
-          {view.type === 'dashboard' ? (
-            <div className="space-y-4">
-              <StatsCards jobs={jobs} />
+      {/* Content - overlaps hero */}
+      <main className="max-w-7xl mx-auto px-6 -mt-6 relative z-20 pb-8">
+        {error && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm animate-slide-down" style={{ fontFamily: 'var(--font-inter)' }}>
+            {error}
+          </div>
+        )}
+
+        {view.type === 'dashboard' ? (
+          <div className="space-y-5">
+            <div className="animate-fade-in-up stagger-3">
               <UploadForm onJobCreated={handleJobCreated} />
+            </div>
+            <div className="animate-fade-in-up stagger-4">
               <JobList
                 jobs={jobs}
                 loading={loading}
                 onSelectJob={(id) => setView({ type: 'detail', jobId: id })}
               />
             </div>
-          ) : (
+          </div>
+        ) : (
+          <div className="animate-fade-in-up">
             <JobDetail
               jobId={view.jobId}
               onBack={() => setView({ type: 'dashboard' })}
               onJobUpdated={handleJobUpdated}
             />
-          )}
-        </div>
+          </div>
+        )}
       </main>
     </div>
   );

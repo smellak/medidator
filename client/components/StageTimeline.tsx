@@ -1,4 +1,5 @@
-import type { Stages, StageName } from '../types';
+import { Check, X, Loader } from 'lucide-react';
+import type { Stages } from '../types';
 import { STAGE_NAMES, STAGE_LABELS } from '../types';
 
 interface Props {
@@ -7,10 +8,10 @@ interface Props {
 }
 
 const statusConfig = {
-  pending: { color: 'bg-gray-200', ring: 'ring-gray-300', text: 'text-gray-500', label: 'Pendiente' },
-  processing: { color: 'bg-chs-warning', ring: 'ring-chs-warning/30', text: 'text-chs-warning', label: 'Procesando' },
-  success: { color: 'bg-chs-success', ring: 'ring-chs-success/30', text: 'text-chs-success', label: 'Completado' },
-  error: { color: 'bg-chs-error', ring: 'ring-chs-error/30', text: 'text-chs-error', label: 'Error' },
+  pending: { dot: 'bg-gray-300', text: 'text-text-secondary', label: 'Pendiente', badge: 'bg-gray-100 text-gray-600' },
+  processing: { dot: 'bg-amber-500', text: 'text-amber-600', label: 'Procesando', badge: 'bg-amber-50 text-amber-700' },
+  success: { dot: 'bg-emerald-500', text: 'text-emerald-600', label: 'Completado', badge: 'bg-emerald-50 text-emerald-700' },
+  error: { dot: 'bg-red-500', text: 'text-red-600', label: 'Error', badge: 'bg-red-50 text-red-700' },
 };
 
 export default function StageTimeline({ stages, compact = false }: Props) {
@@ -23,7 +24,7 @@ export default function StageTimeline({ stages, compact = false }: Props) {
           return (
             <div
               key={name}
-              className={`w-3 h-3 rounded-full ${cfg.color} ${stage.status === 'processing' ? 'animate-pulse' : ''}`}
+              className={`w-2.5 h-2.5 rounded-full ${cfg.dot} ${stage.status === 'processing' ? 'animate-pulse' : ''}`}
               title={`${STAGE_LABELS[name]}: ${cfg.label}`}
             />
           );
@@ -36,48 +37,68 @@ export default function StageTimeline({ stages, compact = false }: Props) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-medium text-gray-600">Progreso del Pipeline</span>
-        <span className="text-sm text-gray-500">{completedCount}/{STAGE_NAMES.length} stages</span>
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-sm font-semibold text-text-primary" style={{ fontFamily: 'var(--font-inter)' }}>
+          Progreso del Pipeline
+        </span>
+        <span className="text-xs font-medium text-text-secondary" style={{ fontFamily: 'var(--font-inter)' }}>
+          {completedCount}/{STAGE_NAMES.length} completados
+        </span>
       </div>
 
-      <div className="space-y-2">
+      {/* Progress bar */}
+      <div className="h-1.5 bg-gray-100 rounded-full mb-5 overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{
+            width: `${(completedCount / STAGE_NAMES.length) * 100}%`,
+            background: 'linear-gradient(90deg, #0891B2, #22d3ee)',
+          }}
+        />
+      </div>
+
+      <div className="space-y-1">
         {STAGE_NAMES.map((name, i) => {
           const stage = stages[name];
           const cfg = statusConfig[stage.status];
           return (
-            <div key={name} className="flex items-center gap-3">
-              <div className="flex flex-col items-center">
-                <div className={`w-6 h-6 rounded-full ${cfg.color} ${cfg.ring} ring-2 flex items-center justify-center flex-shrink-0`}>
-                  {stage.status === 'success' && (
-                    <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                  {stage.status === 'error' && (
-                    <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  )}
-                  {stage.status === 'processing' && (
-                    <div className="w-2.5 h-2.5 bg-white rounded-full animate-pulse" />
-                  )}
-                </div>
-                {i < STAGE_NAMES.length - 1 && (
-                  <div className={`w-0.5 h-3 ${stage.status === 'success' ? 'bg-chs-success' : 'bg-gray-200'}`} />
+            <div
+              key={name}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
+                stage.status === 'success' ? 'bg-emerald-50/50' :
+                stage.status === 'error' ? 'bg-red-50/50' :
+                stage.status === 'processing' ? 'bg-amber-50/50' :
+                'bg-transparent'
+              }`}
+            >
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
+                stage.status === 'success' ? 'bg-emerald-500' :
+                stage.status === 'error' ? 'bg-red-500' :
+                stage.status === 'processing' ? 'bg-amber-500' :
+                'bg-gray-200'
+              }`}>
+                {stage.status === 'success' && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
+                {stage.status === 'error' && <X className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
+                {stage.status === 'processing' && <Loader className="w-3.5 h-3.5 text-white animate-spin" />}
+                {stage.status === 'pending' && (
+                  <span className="text-xs font-bold text-gray-500" style={{ fontFamily: 'var(--font-inter)' }}>{i + 1}</span>
                 )}
               </div>
+
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className={`text-sm font-medium ${stage.status === 'pending' ? 'text-gray-400' : 'text-gray-700'}`}>
-                    {i + 1}. {STAGE_LABELS[name]}
-                  </span>
-                  <span className={`text-xs font-medium ${cfg.text}`}>{cfg.label}</span>
-                </div>
-                {stage.error && (
-                  <p className="text-xs text-chs-error mt-0.5 truncate">{stage.error}</p>
-                )}
+                <span
+                  className={`text-sm font-medium ${stage.status === 'pending' ? 'text-text-muted' : 'text-text-primary'}`}
+                  style={{ fontFamily: 'var(--font-inter)' }}
+                >
+                  {STAGE_LABELS[name]}
+                </span>
               </div>
+
+              <span className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-sm ${cfg.badge}`}
+                style={{ fontFamily: 'var(--font-inter)', letterSpacing: '0.5px' }}
+              >
+                {cfg.label}
+              </span>
             </div>
           );
         })}

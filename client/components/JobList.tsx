@@ -1,3 +1,4 @@
+import { Inbox, ChevronRight } from 'lucide-react';
 import type { Job } from '../types';
 import StageTimeline from './StageTimeline';
 
@@ -7,25 +8,24 @@ interface Props {
   onSelectJob: (id: string) => void;
 }
 
-const statusStyles: Record<string, string> = {
-  created: 'bg-chs-light text-chs-primary',
-  ingested: 'bg-chs-purple-light text-chs-purple',
-  processing: 'bg-chs-warning-light text-chs-warning',
-  completed: 'bg-chs-success-light text-chs-success',
-  error: 'bg-chs-error-light text-chs-error',
+const statusBadge: Record<string, { style: string; label: string }> = {
+  created: { style: 'bg-blue-50 text-blue-700', label: 'Creado' },
+  ingested: { style: 'bg-purple-50 text-purple-700', label: 'Ingestado' },
+  processing: { style: 'bg-amber-50 text-amber-700', label: 'Procesando' },
+  completed: { style: 'bg-emerald-50 text-emerald-700', label: 'Completado' },
+  error: { style: 'bg-red-50 text-red-700', label: 'Error' },
 };
 
-const statusLabels: Record<string, string> = {
-  created: 'Creado',
-  ingested: 'Ingestado',
-  processing: 'Procesando',
-  completed: 'Completado',
-  error: 'Error',
+const statusDot: Record<string, string> = {
+  created: 'bg-blue-500',
+  ingested: 'bg-purple-500',
+  processing: 'bg-amber-500',
+  completed: 'bg-emerald-500',
+  error: 'bg-red-500',
 };
 
 function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleDateString('es-ES', {
+  return new Date(iso).toLocaleDateString('es-ES', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -37,55 +37,61 @@ function formatDate(iso: string): string {
 export default function JobList({ jobs, loading, onSelectJob }: Props) {
   if (loading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+      <div className="bg-surface-card border border-border rounded-lg shadow-sm p-12 text-center">
         <div className="w-10 h-10 border-4 border-gray-200 border-t-chs-primary rounded-full mx-auto mb-3" style={{ animation: 'spin 1s linear infinite' }} />
-        <p className="text-gray-500 text-sm">Cargando jobs...</p>
+        <p className="text-text-secondary text-sm">Cargando jobs...</p>
       </div>
     );
   }
 
   if (jobs.length === 0) {
     return (
-      <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-        <svg className="w-16 h-16 mx-auto text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-        </svg>
-        <p className="text-gray-500 text-sm">No hay jobs. Sube un archivo Excel para empezar.</p>
+      <div className="bg-surface-card border border-border rounded-lg shadow-sm p-12 text-center">
+        <Inbox className="w-16 h-16 mx-auto text-gray-300 mb-3" strokeWidth={1} />
+        <p className="text-text-secondary text-sm">No hay jobs. Sube un archivo Excel para empezar.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-      <div className="px-5 py-4 border-b border-gray-100">
-        <h2 className="text-lg font-semibold text-gray-800">Jobs ({jobs.length})</h2>
+    <div className="bg-surface-card border border-border rounded-lg shadow-sm overflow-hidden">
+      <div className="px-5 py-4 border-b border-border">
+        <h2 className="text-base font-bold text-text-primary" style={{ fontFamily: 'var(--font-inter)' }}>
+          Jobs ({jobs.length})
+        </h2>
       </div>
       <div className="divide-y divide-gray-50">
-        {jobs.map((job) => (
-          <div
-            key={job.id}
-            onClick={() => onSelectJob(job.id)}
-            className="px-5 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-3">
-                <code className="text-sm font-mono text-chs-primary font-semibold">
-                  {job.id.slice(0, 12)}
-                </code>
-                <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusStyles[job.status] || 'bg-gray-100 text-gray-600'}`}>
-                  {statusLabels[job.status] || job.status}
-                </span>
+        {jobs.map((job, i) => {
+          const badge = statusBadge[job.status] || { style: 'bg-gray-100 text-gray-600', label: job.status };
+          const dot = statusDot[job.status] || 'bg-gray-400';
+          return (
+            <div
+              key={job.id}
+              onClick={() => onSelectJob(job.id)}
+              className={`chs-card px-5 py-4 cursor-pointer hover:bg-gray-50 animate-fade-in-up`}
+              style={{ animationDelay: `${i * 0.05}s` }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <code className="text-sm font-mono font-semibold text-chs-hover" style={{ fontFamily: 'var(--font-inter)' }}>
+                    {job.id.length > 12 ? job.id.slice(0, 12) + '…' : job.id}
+                  </code>
+                  <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm text-[10px] font-semibold uppercase ${badge.style}`}
+                    style={{ fontFamily: 'var(--font-inter)', letterSpacing: '0.5px' }}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
+                    {badge.label}
+                  </span>
+                </div>
+                <span className="text-xs text-text-secondary">{formatDate(job.created_at)}</span>
               </div>
-              <span className="text-xs text-gray-400">{formatDate(job.created_at)}</span>
+              <div className="flex items-center justify-between">
+                <StageTimeline stages={job.stages} compact />
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+              </div>
             </div>
-            <div className="flex items-center justify-between">
-              <StageTimeline stages={job.stages} compact />
-              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -1,24 +1,89 @@
 @import "tailwindcss";
 
 @theme {
-  --color-chs-primary: #1e88e5;
-  --color-chs-dark: #0d47a1;
-  --color-chs-light: #e3f2fd;
-  --color-chs-success: #388e3c;
-  --color-chs-success-light: #e8f5e9;
-  --color-chs-error: #d32f2f;
-  --color-chs-error-light: #ffebee;
-  --color-chs-warning: #f57c00;
-  --color-chs-warning-light: #fff3e0;
-  --color-chs-purple: #7b1fa2;
-  --color-chs-purple-light: #f3e5f5;
+  /* CHS Primary Navy/Blue palette */
+  --color-navy-deep: #0a1628;
+  --color-navy-dark: #0d2847;
+  --color-navy-medium: #134a8a;
+  --color-blue-900: #0D47A1;
+  --color-blue-800: #1565C0;
+  --color-blue-700: #1976D2;
+  --color-blue-400: #42A5F5;
+  --color-indigo-deep: #1A237E;
+
+  /* Semantic */
+  --color-chs-primary: #1976D2;
+  --color-chs-dark: #0D47A1;
+  --color-chs-accent: #42A5F5;
+  --color-chs-hover: #1565C0;
+
+  /* App identity: Procesador de Medidas = Cyan */
+  --color-app-primary: #0891B2;
+  --color-app-light: #22d3ee;
+  --color-app-dark: #0e7490;
+
+  /* Status */
+  --color-status-success: #10b981;
+  --color-status-error: #ef4444;
+  --color-status-warning: #f59e0b;
+  --color-status-info: #3b82f6;
+  --color-status-purple: #7c3aed;
+
+  /* Surfaces */
+  --color-surface: #fafafa;
+  --color-surface-card: #ffffff;
+  --color-surface-muted: #ecedef;
+  --color-border: #e2e3e5;
+  --color-text-primary: #1f2124;
+  --color-text-secondary: #5c5f66;
+  --color-text-muted: #babcc0;
+
+  /* Dark surfaces */
+  --color-dark-bg: #222730;
+  --color-dark-card: #272c36;
+  --color-dark-border: #373d49;
+  --color-dark-muted: #333846;
+  --color-dark-text: #eaebed;
+  --color-dark-text-secondary: #aaacb0;
+
+  /* Font families */
+  --font-inter: "Inter", sans-serif;
+  --font-opensans: "Open Sans", sans-serif;
 }
 
+/* Base styles */
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-    Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: var(--font-opensans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.dark body {
+  background: var(--color-dark-bg);
+  color: var(--color-dark-text);
+}
+
+/* CHS Animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes spin {
@@ -26,7 +91,64 @@ body {
   to { transform: rotate(360deg); }
 }
 
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(33, 150, 243, 0.15); }
+  50% { box-shadow: 0 0 40px rgba(33, 150, 243, 0.3); }
+}
+
+.animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; opacity: 0; }
+.animate-fade-in { animation: fadeIn 0.4s ease-out forwards; opacity: 0; }
+.animate-scale-in { animation: scaleIn 0.4s ease-out forwards; opacity: 0; }
+.animate-slide-down { animation: slideDown 0.4s ease-out forwards; opacity: 0; }
+
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.10s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.20s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.30s; }
+.stagger-7 { animation-delay: 0.35s; }
+.stagger-8 { animation-delay: 0.40s; }
+
+/* Glass effects */
+.glass-card {
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-card-strong {
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Dot pattern overlay */
+.dot-pattern {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* CHS Hero gradient */
+.chs-hero-gradient {
+  background: linear-gradient(135deg, #0D47A1 0%, #1565C0 40%, #1976D2 70%, #1A237E 100%);
+}
+
+/* Card hover effect */
+.chs-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.chs-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+/* Text gradient */
+.text-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, rgba(255,255,255,0.8) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
