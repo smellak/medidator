@@ -29,34 +29,41 @@ class MemoryStore {
       let status: Job['status'] = 'created';
 
       // Check which stage files exist and mark them as success
-      const stageFiles: Record<string, string> = {
-        stage1_ingest_normalize: 'stage1_base.json',
-        stage2_paquete_estimable: 'stage2_paquete_estimable.json',
-        stage3_normalize_measures: 'stage3_medidas_normalizadas.json',
-        stage4_ia_enrichment: 'stage4_enriched.json',
-        stage5_outliers_clean: 'stage5_clean.json',
-        stage6_filter_sets: 'stage6_main_clean.json',
-        stage7_stats: 'stage7_final.json',
+      const stageFiles: Record<string, string[]> = {
+        stage1_ingest_normalize: ['stage1_base.json'],
+        stage2_paquete_estimable: ['stage2_estimable.json', 'stage2_paquete_estimable.json'],
+        stage3_normalize_measures: ['stage3_normalized.json', 'stage3_medidas_normalizadas.json'],
+        stage4_ia_enrichment: ['stage4_enriched.json'],
+        stage5_outliers_clean: ['stage5_cleaned.json', 'stage5_clean.json'],
+        stage6_filter_sets: ['stage6_sets.json', 'stage6_main_clean.json'],
+        stage7_stats: ['stage7_stats.json', 'stage7_final.json'],
       };
 
       let lastCompletedStage = 0;
-      for (const [stageName, fileName] of Object.entries(stageFiles)) {
-        const filePath = path.join(jobDataPath, fileName);
-        if (fs.existsSync(filePath)) {
-          (stages as any)[stageName].status = 'success';
+      for (const [stageName, fileNames] of Object.entries(stageFiles)) {
+        let found = false;
+        for (const fileName of fileNames) {
+          const filePath = path.join(jobDataPath, fileName);
+          if (fs.existsSync(filePath)) {
+            (stages as any)[stageName].status = 'success';
 
-          // Try to load basic metrics
-          try {
-            const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-            if (Array.isArray(data)) {
-              (stages as any)[stageName].metrics = { totalRows: data.length };
+            // Try to load basic metrics
+            try {
+              const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+              if (Array.isArray(data)) {
+                (stages as any)[stageName].metrics = { totalRows: data.length };
+              } else if (data.summary) {
+                (stages as any)[stageName].metrics = data.summary;
+              }
+            } catch {
+              // ignore parsing errors
             }
-          } catch {
-            // ignore parsing errors
-          }
 
-          lastCompletedStage++;
+            found = true;
+            break;
+          }
         }
+        if (found) lastCompletedStage++;
       }
 
       // Determine job status based on completed stages

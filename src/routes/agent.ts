@@ -20,6 +20,16 @@ interface AgentResponse {
   error?: string;
 }
 
+const CAPABILITIES = [
+  'listar_jobs',
+  'ver_job',
+  'ver_metricas_stage1',
+  'estadisticas_generales',
+  'ver_estadisticas_job',
+  'ver_outliers',
+  'ver_productos_sin_medidas',
+];
+
 router.post('/agent', requireCHS, async (req: Request, res: Response) => {
   const { capability, parameters } = req.body as AgentRequest;
 
@@ -49,9 +59,18 @@ router.post('/agent', requireCHS, async (req: Request, res: Response) => {
       case 'estadisticas_generales':
         result = handleEstadisticasGenerales();
         break;
+      case 'ver_estadisticas_job':
+        result = handleVerEstadisticasJob(parameters);
+        break;
+      case 'ver_outliers':
+        result = handleVerOutliers(parameters);
+        break;
+      case 'ver_productos_sin_medidas':
+        result = handleVerProductosSinMedidas(parameters);
+        break;
       default:
         result = {
-          text: `Capability '${capability}' no reconocida. Capabilities disponibles: listar_jobs, ver_job, ver_metricas_stage1, estadisticas_generales`,
+          text: `Capability '${capability}' no reconocida. Capabilities disponibles: ${CAPABILITIES.join(', ')}`,
           success: false,
           error: 'UNKNOWN_CAPABILITY',
         };
@@ -233,6 +252,176 @@ function handleEstadisticasGenerales(): AgentResponse {
       lastJob: lastJob
         ? { id: lastJob.id, status: lastJob.status, created_at: lastJob.created_at }
         : null,
+    },
+  };
+}
+
+function handleVerEstadisticasJob(params: Record<string, any>): AgentResponse {
+  const { jobId } = params;
+  if (!jobId) {
+    return { text: 'Se requiere el parámetro jobId', success: false, error: 'MISSING_PARAM' };
+  }
+
+  const statsFile = path.join(DATA_DIR, jobId, 'stage7_stats.json');
+  if (!fs.existsSync(statsFile)) {
+    return {
+      text: `El Stage 7 (Estadísticas) del job '${jobId}' no se ha ejecutado todavía.`,
+      success: false,
+      error: 'STAGE7_NOT_EXECUTED',
+    };
+  }
+
+  try {
+    const stats = JSON.parse(fs.readFileSync(statsFile, 'utf-8'));
+    const c = stats.coverage || {};
+    const q = stats.quality || {};
+
+    const lines = [
+      `**Estadísticas del Job ${jobId}:**`,
+      ``,
+      `**Cobertura:**`,
+      `- Con medidas parseadas: ${c.with_parsed_measures?.count || 0} (${c.with_parsed_measures?.pct || 0}%)`,
+      `- Con todas las dimensiones: ${c.with_all_dimensions?.count || 0} (${c.with_all_dimensions?.pct || 0}%)`,
+      `- Con peso: ${c.with_weight?.count || 0} (${c.with_weight?.pct || 0}%)`,
+      `- Compuestos: ${c.composites?.count || 0} (${c.composites?.pct || 0}%)`,
+      ``,
+      `**Calidad:**`,
+      `- Outliers detectados: ${q.outliers_detected || 0}`,
+      `- Productos excluidos: ${q.products_excluded || 0}`,
+      `- Tasa de parseo exitoso: ${q.parse_success_rate || 0}%`,
+      `- Confianza promedio: ${q.avg_confidence || 0}`,
+    ];
+
+    // Add distribution summaries
+    if (stats.distributions) {
+      lines.push('', '**Distribuciones (mediana):**');
+      for (const [dim, data] of Object.entries(stats.distributions) as any[]) {
+        lines.push(`- ${dim}: mediana=${data.median}, rango=${data.min}-${data.max}, avg=${data.avg}`);
+      }
+    }
+
+    return {
+      text: lines.join('\n'),
+      success: true,
+      data: stats,
+    };
+  } catch (err: any) {
+    return { text: `Error leyendo estadísticas: ${err.message}`, success: false, error: 'READ_ERROR' };
+  }
+}
+
+function handleVerOutliers(params: Record<string, any>): AgentResponse {
+  const { jobId } = params;
+  if (!jobId) {
+    return { text: 'Se requiere el parámetro jobId', success: false, error: 'MISSING_PARAM' };
+  }
+
+  const stage5File = path.join(DATA_DIR, jobId, 'stage5_cleaned.json');
+  if (!fs.existsSync(stage5File)) {
+    return {
+      text: `El Stage 5 (Outliers) del job '${jobId}' no se ha ejecutado todavía.`,
+      success: false,
+      error: 'STAGE5_NOT_EXECUTED',
+    };
+  }
+
+  try {
+    const data = JSON.parse(fs.readFileSync(stage5File, 'utf-8'));
+    const outliers = data.outliers || [];
+    const summary = data.summary || {};
+    const limite = params.limite || 20;
+
+    const lines = [
+      `**Outliers del Job ${jobId}:**`,
+      `- Total detectados: ${summary.outlier_count || outliers.length}`,
+      `- Productos excluidos (ERROR): ${summary.excluded || 0}`,
+      `- Productos con warnings: ${summary.warnings || 0}`,
+      '',
+      '**Por regla:**',
+    ];
+
+    if (summary.by_rule) {
+      for (const [rule, count] of Object.entries(summary.by_rule)) {
+        lines.push(`- ${rule}: ${count}`);
+      }
+    }
+
+    lines.push('', `**Primeros ${Math.min(limite, outliers.length)} outliers:**`);
+    for (const o of outliers.slice(0, limite)) {
+      lines.push(`- ${o['COD.ARTICULO']}: ${o.rule} ${o.field}=${o.value} (${o.severity}) — ${o.detail}`);
+    }
+
+    return {
+      text: lines.join('\n'),
+      success: true,
+      data: {
+        summary,
+        outliers: outliers.slice(0, limite),
+        total_outliers: outliers.length,
+      },
+    };
+  } catch (err: any) {
+    return { text: `Error leyendo outliers: ${err.message}`, success: false, error: 'READ_ERROR' };
+  }
+}
+
+function handleVerProductosSinMedidas(params: Record<string, any>): AgentResponse {
+  const { jobId } = params;
+  if (!jobId) {
+    return { text: 'Se requiere el parámetro jobId', success: false, error: 'MISSING_PARAM' };
+  }
+
+  // Try stage5 first (cleaned data), then stage4, then stage3
+  const files = ['stage5_cleaned.json', 'stage4_enriched.json', 'stage3_normalized.json'];
+  let products: any[] = [];
+
+  for (const f of files) {
+    const fp = path.join(DATA_DIR, jobId, f);
+    if (fs.existsSync(fp)) {
+      const data = JSON.parse(fs.readFileSync(fp, 'utf-8'));
+      products = data.products || [];
+      break;
+    }
+  }
+
+  if (products.length === 0) {
+    return {
+      text: `No hay datos procesados para el job '${jobId}'. Ejecuta el pipeline primero.`,
+      success: false,
+      error: 'NO_DATA',
+    };
+  }
+
+  const limite = params.limite || 20;
+  const sinMedidas = products.filter((p: any) =>
+    p.measures?.ancho_cm === null && p.measures?.alto_cm === null && p.measures?.profundidad_cm === null
+  );
+
+  const sample = sinMedidas.slice(0, limite).map((p: any) => ({
+    cod: p['COD.ARTICULO'],
+    descripcion: p.original?.['Descripcion del proveedor'] || '',
+    familia: p.original?.['FAMILIA'] || '',
+    category: p.category || '',
+  }));
+
+  const lines = [
+    `**Productos sin medidas del Job ${jobId}:**`,
+    `- Total sin medidas: ${sinMedidas.length} de ${products.length} (${Math.round(sinMedidas.length / products.length * 1000) / 10}%)`,
+    '',
+    `**Primeros ${sample.length}:**`,
+  ];
+
+  for (const p of sample) {
+    lines.push(`- ${p.cod}: ${p.descripcion.substring(0, 60)} (${p.category})`);
+  }
+
+  return {
+    text: lines.join('\n'),
+    success: true,
+    data: {
+      total_sin_medidas: sinMedidas.length,
+      total_productos: products.length,
+      productos: sample,
     },
   };
 }

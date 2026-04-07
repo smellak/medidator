@@ -4,6 +4,12 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { store } from '../db/memory-store';
 import { executeStage1 } from '../services/stage1';
+import { executeStage2 } from '../services/stage2';
+import { executeStage3 } from '../services/stage3';
+import { executeStage4 } from '../services/stage4';
+import { executeStage5 } from '../services/stage5';
+import { executeStage6 } from '../services/stage6';
+import { executeStage7 } from '../services/stage7';
 
 const router = Router();
 const UPLOADS_DIR = path.resolve(process.cwd(), 'uploads');
@@ -82,17 +88,122 @@ router.post('/:jobId/stage1', async (req: Request, res: Response) => {
     res.status(404).json({ error: 'Job not found' });
     return;
   }
-
   try {
     await executeStage1(jobId);
-    const updatedJob = store.getJob(jobId);
-    res.json(updatedJob);
+    res.json(store.getJob(jobId));
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// POST /jobs/:jobId/run - Execute pipeline (stage1 only for now)
+// POST /jobs/:jobId/stage2 - Execute stage 2
+router.post('/:jobId/stage2', async (req: Request, res: Response) => {
+  const { jobId } = req.params;
+  const job = store.getJob(jobId);
+  if (!job) {
+    res.status(404).json({ error: 'Job not found' });
+    return;
+  }
+  try {
+    await executeStage2(jobId);
+    res.json(store.getJob(jobId));
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /jobs/:jobId/stage3 - Execute stage 3
+router.post('/:jobId/stage3', async (req: Request, res: Response) => {
+  const { jobId } = req.params;
+  const job = store.getJob(jobId);
+  if (!job) {
+    res.status(404).json({ error: 'Job not found' });
+    return;
+  }
+  try {
+    await executeStage3(jobId);
+    res.json(store.getJob(jobId));
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /jobs/:jobId/stage4 - Execute stage 4
+router.post('/:jobId/stage4', async (req: Request, res: Response) => {
+  const { jobId } = req.params;
+  const job = store.getJob(jobId);
+  if (!job) {
+    res.status(404).json({ error: 'Job not found' });
+    return;
+  }
+  try {
+    await executeStage4(jobId);
+    res.json(store.getJob(jobId));
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /jobs/:jobId/stage5 - Execute stage 5
+router.post('/:jobId/stage5', async (req: Request, res: Response) => {
+  const { jobId } = req.params;
+  const job = store.getJob(jobId);
+  if (!job) {
+    res.status(404).json({ error: 'Job not found' });
+    return;
+  }
+  try {
+    await executeStage5(jobId);
+    res.json(store.getJob(jobId));
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /jobs/:jobId/stage6 - Execute stage 6
+router.post('/:jobId/stage6', async (req: Request, res: Response) => {
+  const { jobId } = req.params;
+  const job = store.getJob(jobId);
+  if (!job) {
+    res.status(404).json({ error: 'Job not found' });
+    return;
+  }
+  try {
+    await executeStage6(jobId);
+    res.json(store.getJob(jobId));
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /jobs/:jobId/stage7 - Execute stage 7
+router.post('/:jobId/stage7', async (req: Request, res: Response) => {
+  const { jobId } = req.params;
+  const job = store.getJob(jobId);
+  if (!job) {
+    res.status(404).json({ error: 'Job not found' });
+    return;
+  }
+  try {
+    await executeStage7(jobId);
+    res.json(store.getJob(jobId));
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Stage executors in order
+const stageExecutors = [
+  { name: 'stage1_ingest_normalize', fn: executeStage1 },
+  { name: 'stage2_paquete_estimable', fn: executeStage2 },
+  { name: 'stage3_normalize_measures', fn: executeStage3 },
+  { name: 'stage4_ia_enrichment', fn: executeStage4 },
+  { name: 'stage5_outliers_clean', fn: executeStage5 },
+  { name: 'stage6_filter_sets', fn: executeStage6 },
+  { name: 'stage7_stats', fn: executeStage7 },
+];
+
+// POST /jobs/:jobId/run - Execute full 7-stage pipeline
 router.post('/:jobId/run', async (req: Request, res: Response) => {
   const { jobId } = req.params;
   const job = store.getJob(jobId);
@@ -102,12 +213,13 @@ router.post('/:jobId/run', async (req: Request, res: Response) => {
   }
 
   try {
-    // Only stage 1 implemented for now
-    if (job.stages.stage1_ingest_normalize.status !== 'success') {
-      await executeStage1(jobId);
+    for (const stage of stageExecutors) {
+      const current = store.getJob(jobId)!;
+      if ((current.stages as any)[stage.name].status !== 'success') {
+        await stage.fn(jobId);
+      }
     }
-    const updatedJob = store.getJob(jobId);
-    res.json(updatedJob);
+    res.json(store.getJob(jobId));
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -123,17 +235,23 @@ router.get('/:jobId/export', (req: Request, res: Response) => {
     return;
   }
 
-  // Find the latest stage output file
   const DATA_DIR = path.resolve(process.cwd(), 'data');
-  const possibleFiles = [
-    'stage7_final.json',
-    'stage6_main_clean.json',
-    'stage5_clean.json',
+
+  // For CSV export, prefer files with product arrays
+  // For JSON export, prefer the latest stage output
+  const csvFiles = [
+    'stage5_cleaned.json',
     'stage4_enriched.json',
-    'stage3_medidas_normalizadas.json',
-    'stage2_paquete_estimable.json',
+    'stage3_normalized.json',
+    'stage2_estimable.json',
     'stage1_base.json',
   ];
+  const jsonFiles = [
+    'stage7_stats.json',
+    'stage6_sets.json',
+    ...csvFiles,
+  ];
+  const possibleFiles = format === 'csv' ? csvFiles : jsonFiles;
 
   let dataFile: string | null = null;
   for (const f of possibleFiles) {
@@ -151,12 +269,38 @@ router.get('/:jobId/export', (req: Request, res: Response) => {
 
   const data = JSON.parse(fs.readFileSync(dataFile, 'utf-8'));
 
-  if (format === 'csv' && Array.isArray(data) && data.length > 0) {
-    const headers = Object.keys(data[0]);
+  if (format === 'csv') {
+    // For CSV, extract the products array from the data
+    const products = data.products || (Array.isArray(data) ? data : []);
+    if (products.length === 0) {
+      res.status(400).json({ error: 'No product data available for CSV export' });
+      return;
+    }
+
+    // Flatten measures for CSV
+    const csvRows = products.map((p: any) => ({
+      'COD.ARTICULO': p['COD.ARTICULO'] || '',
+      Descripcion: p.original?.['Descripcion del proveedor'] || '',
+      FAMILIA: p.original?.['FAMILIA'] || '',
+      product_type: p.product_type || '',
+      category: p.category || '',
+      ancho_cm: p.measures?.ancho_cm ?? '',
+      alto_cm: p.measures?.alto_cm ?? '',
+      profundidad_cm: p.measures?.profundidad_cm ?? '',
+      peso_kg: p.measures?.peso_kg ?? '',
+      volumen_m3: p.measures?.volumen_m3 ?? '',
+      source: p.source || '',
+      parse_confidence: p.parse_confidence ?? '',
+      composite: p.composite ? 'SI' : 'NO',
+      components: (p.components || []).length,
+      outlier_warning: p.outlier_warning ? 'SI' : 'NO',
+    }));
+
+    const headers = Object.keys(csvRows[0]);
     const csvLines = [headers.join(',')];
-    for (const row of data) {
+    for (const row of csvRows) {
       const values = headers.map(h => {
-        const val = row[h];
+        const val = (row as any)[h];
         if (val === null || val === undefined) return '';
         const str = String(val);
         if (str.includes(',') || str.includes('"') || str.includes('\n')) {
