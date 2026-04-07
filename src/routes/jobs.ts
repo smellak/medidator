@@ -278,9 +278,10 @@ router.get('/:jobId/export', (req: Request, res: Response) => {
     }
 
     // Flatten measures for CSV
+    const sanitize = (s: string) => s.replace(/[\r\n]+/g, ' ').trim();
     const csvRows = products.map((p: any) => ({
       'COD.ARTICULO': p['COD.ARTICULO'] || '',
-      Descripcion: p.original?.['Descripcion del proveedor'] || '',
+      Descripcion: sanitize(String(p.original?.['Descripcion del proveedor'] || '')),
       FAMILIA: p.original?.['FAMILIA'] || '',
       product_type: p.product_type || '',
       category: p.category || '',
