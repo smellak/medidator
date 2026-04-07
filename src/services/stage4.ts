@@ -5,7 +5,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const DATA_DIR = path.resolve(process.cwd(), 'data');
 const EAN_CACHE_FILE = path.join(DATA_DIR, 'ean_cache.json');
-const GEMINI_API_KEY = 'AIzaSyDZl-qIzyUuXnbyTVYgD_CPI_cqlihxv0E';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const GEMINI_MODEL = 'gemini-2.5-flash';
 const BATCH_SIZE = 5;
 const BATCH_DELAY_MS = 1000;
