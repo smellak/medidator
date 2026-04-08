@@ -2,11 +2,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { store } from '../db/memory-store';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getAiKey, invalidateKeyCache } from '../lib/platform-key';
 
 const DATA_DIR = path.resolve(process.cwd(), 'data');
 const EAN_CACHE_FILE = path.join(DATA_DIR, 'ean_cache.json');
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_MODEL = 'gemini-2.5-flash';
 const BATCH_SIZE = 5;
 const BATCH_DELAY_MS = 1000;
 const SAVE_EVERY = 50;
@@ -292,12 +291,32 @@ export async function executeStage4(jobId: string): Promise<void> {
     // Process uncached EANs in batches
     if (electrosWithEan.length > 0) {
       console.log(`[Stage4] Querying Gemini for ${electrosWithEan.length} EANs (${eanCached} cached)...`);
-      const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+      const { apiKey, defaultModel } = await getAiKey('google');
+      const geminiModel = defaultModel || 'gemini-2.5-flash';
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: geminiModel });
+      let retried = false;
 
       for (let batchStart = 0; batchStart < electrosWithEan.length; batchStart += BATCH_SIZE) {
         const batch = electrosWithEan.slice(batchStart, batchStart + BATCH_SIZE);
-        const results = await queryGeminiBatch(model, batch);
+        let results: Array<{ ean: string; result: Omit<EanCacheEntry, 'source' | 'fetched_at'> | null }>;
+
+        try {
+          results = await queryGeminiBatch(model, batch);
+        } catch (err: any) {
+          // Retry once with fresh key on 403
+          if (!retried && err?.status === 403) {
+            console.warn('[Stage4] Gemini 403 — invalidating key cache and retrying...');
+            invalidateKeyCache();
+            const fresh = await getAiKey('google');
+            const freshGenAI = new GoogleGenerativeAI(fresh.apiKey);
+            const freshModel = freshGenAI.getGenerativeModel({ model: fresh.defaultModel || 'gemini-2.5-flash' });
+            results = await queryGeminiBatch(freshModel, batch);
+            retried = true;
+          } else {
+            throw err;
+          }
+        }
 
         for (const { ean, result } of results) {
           eanQueried++;
