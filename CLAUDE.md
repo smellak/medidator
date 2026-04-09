@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Medidator is a measurement processing pipeline integrated into **CHS Platform v2**. It ingests Excel files (.xlsx/.xls), runs a 7-stage pipeline (stages 2-7 are heuristic + AI), and outputs normalized/validated measurement data. The app is deployed as a Docker container on Coolify, behind Traefik reverse proxy with CHS ForwardAuth SSO.
+Medidator is a measurement processing pipeline integrated into **CHS Platform v2**. It ingests Excel files (.xlsx/.xls), runs an 8-stage pipeline (stages 2-7 are heuristic + AI, stage 8 is logistics volume estimation), and outputs normalized/validated measurement data. The app is deployed as a Docker container on Coolify, behind Traefik reverse proxy with CHS ForwardAuth SSO.
 
 ## Architecture
 
@@ -14,14 +14,14 @@ Client (React + Vite)  →  Express Backend  →  Google Gemini AI (stage 4 only
 - **Backend**: Express + TypeScript (`src/`), compiled to `dist/`, runs on port 3000
 - **Frontend**: React 19 + Vite + Tailwind CSS v4 (`client/`), built to `dist-ui/`
 - **Storage**: In-memory store (`src/db/memory-store.ts`) — no database, data lost on restart
-- **AI**: Google Gemini 2.5 Flash via `@google/generative-ai` — used ONLY in stage4 for EAN lookups
+- **AI**: Google Gemini via `@google/generative-ai` — used in stage4 (product EAN lookups) and stage8 (packaging EAN lookups)
 
 ## Key Directories
 
 ```
 src/                    # Backend source
   server.ts             # Express entry point (port 3000)
-  routes/jobs.ts        # CRUD + pipeline execution endpoints (stages 1-7 + /run)
+  routes/jobs.ts        # CRUD + pipeline execution endpoints (stages 1-8 + /run)
   routes/agent.ts       # CHS Platform agent API (/api/agent) — 7 capabilities
   services/stage1.ts    # Stage 1: ingest + normalize Excel
   services/stage2.ts    # Stage 2: classify product completeness (estimable)
@@ -30,6 +30,7 @@ src/                    # Backend source
   services/stage5.ts    # Stage 5: outlier detection + exclusion
   services/stage6.ts    # Stage 6: grouping sets (by family, brand, type, etc.)
   services/stage7.ts    # Stage 7: statistics + distributions + final summary
+  services/stage8.ts    # Stage 8: logistics volume estimation (4 layers)
   middleware/chs-auth.ts # ForwardAuth header extraction
   types/job.ts          # Job/Stage type definitions
   db/memory-store.ts    # In-memory job storage
@@ -45,11 +46,14 @@ client/                 # Frontend source
     UploadForm.tsx       # Excel file upload with drag & drop
     JobList.tsx          # Job list with status badges
     JobDetail.tsx        # Full job view with stages + metrics
-    StageTimeline.tsx    # 7-stage pipeline progress visualization
+    StageTimeline.tsx    # 8-stage pipeline progress visualization
 
-data/                   # Pipeline output + EAN cache
-  ean_cache.json        # Global Gemini EAN cache (persists across jobs, ~1877 entries)
-  <jobId>/              # Per-job stage outputs (stage1_base.json ... stage7_stats.json)
+data/                   # Pipeline output + caches
+  ean_cache.json        # Gemini product EAN cache (~1877 entries, stage4)
+  ean_packaging_cache.json # Gemini packaging EAN cache (~2233 entries, stage8)
+  ground_truth_logistics.json # 3,118 products with ERP M3 ground truth
+  ratios_calibracion.json # Calibration ratios by subfamilia/tipo
+  <jobId>/              # Per-job stage outputs (stage1_base.json ... stage8_logistics.json)
 
 e2e/                    # Playwright E2E tests (38 specs)
 dist-ui/                # Built frontend (committed, served by Express)
@@ -72,7 +76,8 @@ validate_200.js         # Validation script: 200-product coherence check via Gem
 | POST | `/jobs/:id/stage5` | Run stage 5 only |
 | POST | `/jobs/:id/stage6` | Run stage 6 only |
 | POST | `/jobs/:id/stage7` | Run stage 7 only |
-| POST | `/jobs/:id/run` | Run full pipeline (skips already-completed stages) |
+| POST | `/jobs/:id/stage8` | Run stage 8 only (logistics volume, Gemini for electro packaging) |
+| POST | `/jobs/:id/run` | Run full 8-stage pipeline (skips already-completed stages) |
 | GET | `/jobs/:id/export?format=csv\|json` | Export job results |
 | POST | `/api/agent` | CHS Platform agent endpoint (7 capabilities) |
 
@@ -84,7 +89,13 @@ validate_200.js         # Validation script: 200-product coherence check via Gem
 4. **stage4_ia_enrichment** — Classify by FAMILIA prefix (mueble/electro/accesorio); extract dims from description; **Gemini EAN lookup for electrodomésticos only** (1896 electros with valid EAN, 96% found); global cache at `data/ean_cache.json`
 5. **stage5_outliers_clean** — 7 outlier rules (dim > 500cm, dim > 300cm, dim < 5cm for mueble, peso > 500kg, densidad alta/baja, M3 incoherente); **peso unit fix** (electro >300kg ÷10, any >5000kg ÷1000); ERROR → excluded, WARNING → flagged
 6. **stage6_filter_sets** — 8 grouping sets: by_family, by_linea, by_marca, by_type, by_completeness, with_measures, composites, missing_measures
-7. **stage7_stats** — Coverage stats, dimension distributions with histograms, per-type analysis, quality metrics, composite stats; sets job.status = 'completed'
+7. **stage7_stats** — Coverage stats, dimension distributions with histograms, per-type analysis, quality metrics, composite stats
+8. **stage8_logistics** — Logistics volume estimation with 4-layer cascade:
+   - **Layer 1 (ERP ground truth)**: M3 field from ERP (matches agency invoices at 99.8%), confidence 0.99
+   - **Layer 2 (Gemini packaging)**: Query Gemini for packaging/embalaje dimensions by EAN (electros only), cache at `data/ean_packaging_cache.json`, confidence 0.80
+   - **Layer 3 (Ratio estimation)**: vol_logístico = vol_producto × calibration ratio by subfamilia, confidence 0.30-0.65
+   - **Layer 4 (Heuristic average)**: Average vol_logístico from same subfamily/type, confidence 0.15-0.20
+   - Sets job.status = 'completed' (stage8 is the completion gate)
 
 ## Environment Variables
 
@@ -92,7 +103,7 @@ validate_200.js         # Validation script: 200-product coherence check via Gem
 |----------|----------|-------------|
 | `PORT` | No | Server port (default: 3000) |
 | `GEMINI_API_KEY` | No (fallback) | Google Gemini API key fallback. **NEVER hardcode — env var only** |
-| `CHS_PLATFORM_URL` | Yes (for stage4 AI) | CHS Platform internal URL for centralized AI key resolution |
+| `CHS_PLATFORM_URL` | Yes (for stage4+8 AI) | CHS Platform internal URL for centralized AI key resolution |
 
 ## Security Rules
 
@@ -132,7 +143,7 @@ GEMINI_API_KEY=... node validate_200.js
 - **Coolify app UUID**: `wk8sggsg4koowwccssww4c4s`
 - **Domain**: `medidas.centrohogarsanchez.es`
 - **Docker**: Multi-stage build (deps → builder → runner), Node 20 Alpine
-- **Current container**: `wk8sggsg4koowwccssww4c4s-045031474110`
+- **Current container**: `wk8sggsg4koowwccssww4c4s-172243784328`
 
 ### Traefik ForwardAuth
 
@@ -153,7 +164,7 @@ grep -rn "AIzaSy\|sk-ant-api\|ghp_" . --include="*.ts" --include="*.js" | grep -
 npx vite build
 
 # 3. Commit & push
-git add src/ dist-ui/ data/ean_cache.json
+git add src/ dist-ui/ data/ean_cache.json data/ean_packaging_cache.json data/ground_truth_logistics.json data/ratios_calibracion.json
 git commit -m "description"
 source ~/.env && git push https://${GITHUB_TOKEN}@github.com/smellak/medidator.git main
 
@@ -175,14 +186,15 @@ sudo docker exec chs-db psql -U chs -d chs -c \
   "UPDATE app_instances SET internal_url = 'http://wk8sggsg4koowwccssww4c4s-NEW:3000' WHERE internal_url LIKE '%wk8sggsg4koowwccssww4c4s%';"
 ```
 
-## EAN Cache
+## Caches & Static Data
 
-- **File**: `data/ean_cache.json` (global, not per-job)
-- **Entries**: ~1877 electrodoméstico EANs with Gemini-sourced dimensions
-- **Baked into Docker image** via `COPY data/ ./data/` — survives rebuilds
+- **`data/ean_cache.json`**: ~1877 product EAN lookups (stage4, product dimensions)
+- **`data/ean_packaging_cache.json`**: ~2233 packaging EAN lookups (stage8, embalaje dimensions, 99.5% hit rate)
+- **`data/ground_truth_logistics.json`**: 3,118 products with ERP M3 ground truth (static reference)
+- **`data/ratios_calibracion.json`**: Calibration ratios product→package by subfamilia/tipo (static reference)
+- All baked into Docker image via `COPY data/ ./data/` — survives rebuilds
 - **No persistent volume** — runtime cache additions are lost on container restart
-- Cache is checked before each Gemini API call; re-run with cache takes ~300ms vs ~55min without
-- Only electrodomésticos are queried (mueble EANs are unreliable)
+- Only electrodomésticos are queried for EAN (mueble EANs are unreliable)
 
 ## Data Characteristics (from real 16,009-product dataset)
 
