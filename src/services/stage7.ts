@@ -201,7 +201,7 @@ export async function executeStage7(jobId: string): Promise<void> {
       avg_confidence: avgConfidence,
       outliers: outliers.length,
     };
-    job.status = 'completed';
+    // job.status remains 'processing' — stage8 is the new completion gate
     job.summary = output;
     store.updateJob(jobId, job);
   } catch (err: any) {

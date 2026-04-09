@@ -110,12 +110,12 @@ function handleListarJobs(params: Record<string, any>): AgentResponse {
       status: job.status,
       created_at: job.created_at,
       stages_completados: stagesCompleted,
-      stages_total: 7,
+      stages_total: STAGE_NAMES.length,
     };
   });
 
   const lines = jobSummaries.map(j =>
-    `- Job ${j.id}: ${j.status} (${j.stages_completados}/7 stages) - Creado: ${new Date(j.created_at).toLocaleString('es-ES')}`
+    `- Job ${j.id}: ${j.status} (${j.stages_completados}/${STAGE_NAMES.length} stages) - Creado: ${new Date(j.created_at).toLocaleString('es-ES')}`
   );
 
   return {

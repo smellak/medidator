@@ -16,6 +16,7 @@ export interface Stages {
   stage5_outliers_clean: Stage;
   stage6_filter_sets: Stage;
   stage7_stats: Stage;
+  stage8_logistics: Stage;
 }
 
 export interface Job {
@@ -35,6 +36,7 @@ export const STAGE_NAMES = [
   'stage5_outliers_clean',
   'stage6_filter_sets',
   'stage7_stats',
+  'stage8_logistics',
 ] as const;
 
 export type StageName = typeof STAGE_NAMES[number];
@@ -48,5 +50,6 @@ export function createInitialStages(): Stages {
     stage5_outliers_clean: { status: 'pending', metrics: null },
     stage6_filter_sets: { status: 'pending', metrics: null },
     stage7_stats: { status: 'pending', metrics: null },
+    stage8_logistics: { status: 'pending', metrics: null },
   };
 }

@@ -16,6 +16,7 @@ export interface Stages {
   stage5_outliers_clean: Stage;
   stage6_filter_sets: Stage;
   stage7_stats: Stage;
+  stage8_logistics: Stage;
 }
 
 export interface Job {
@@ -35,6 +36,7 @@ export const STAGE_NAMES = [
   'stage5_outliers_clean',
   'stage6_filter_sets',
   'stage7_stats',
+  'stage8_logistics',
 ] as const;
 
 export type StageName = (typeof STAGE_NAMES)[number];
@@ -47,6 +49,7 @@ export const STAGE_LABELS: Record<StageName, string> = {
   stage5_outliers_clean: 'Limpieza Outliers',
   stage6_filter_sets: 'Filtrar Sets',
   stage7_stats: 'Estadísticas',
+  stage8_logistics: 'Volumen Logístico',
 };
 
 export interface HealthResponse {

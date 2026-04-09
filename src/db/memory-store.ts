@@ -37,6 +37,7 @@ class MemoryStore {
         stage5_outliers_clean: ['stage5_cleaned.json', 'stage5_clean.json'],
         stage6_filter_sets: ['stage6_sets.json', 'stage6_main_clean.json'],
         stage7_stats: ['stage7_stats.json', 'stage7_final.json'],
+        stage8_logistics: ['stage8_logistics.json'],
       };
 
       let lastCompletedStage = 0;
@@ -67,7 +68,7 @@ class MemoryStore {
       }
 
       // Determine job status based on completed stages
-      if (lastCompletedStage === 7) {
+      if (lastCompletedStage === 8) {
         status = 'completed';
       } else if (lastCompletedStage > 0) {
         status = 'ingested';

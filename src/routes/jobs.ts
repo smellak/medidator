@@ -10,6 +10,7 @@ import { executeStage4 } from '../services/stage4';
 import { executeStage5 } from '../services/stage5';
 import { executeStage6 } from '../services/stage6';
 import { executeStage7 } from '../services/stage7';
+import { executeStage8 } from '../services/stage8';
 
 const router = Router();
 const UPLOADS_DIR = path.resolve(process.cwd(), 'uploads');
@@ -192,6 +193,22 @@ router.post('/:jobId/stage7', async (req: Request, res: Response) => {
   }
 });
 
+// POST /jobs/:jobId/stage8 - Execute stage 8
+router.post('/:jobId/stage8', async (req: Request, res: Response) => {
+  const { jobId } = req.params;
+  const job = store.getJob(jobId);
+  if (!job) {
+    res.status(404).json({ error: 'Job not found' });
+    return;
+  }
+  try {
+    await executeStage8(jobId);
+    res.json(store.getJob(jobId));
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Stage executors in order
 const stageExecutors = [
   { name: 'stage1_ingest_normalize', fn: executeStage1 },
@@ -201,6 +218,7 @@ const stageExecutors = [
   { name: 'stage5_outliers_clean', fn: executeStage5 },
   { name: 'stage6_filter_sets', fn: executeStage6 },
   { name: 'stage7_stats', fn: executeStage7 },
+  { name: 'stage8_logistics', fn: executeStage8 },
 ];
 
 // POST /jobs/:jobId/run - Execute full 7-stage pipeline
