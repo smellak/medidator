@@ -203,15 +203,11 @@ function postValidateElectroMeasures(measures: ProductMeasures['measures'], fami
   const isElectro = familiaPrefix === '2';
   if (!isElectro) return [];
 
-  const { ancho_cm, alto_cm, profundidad_cm } = measures;
-  if (ancho_cm === null || alto_cm === null || profundidad_cm === null) return [];
   const fixes: string[] = [];
 
   // Fix 3: Detect Spanish thousands separator (e.g., 1.279 = 1279mm = 127.9cm)
-  // Check each dim: if value < 10 and has exactly 3 decimal digits → multiply by 100
-  const fixThousandsSep = (val: number): { fixed: number; applied: boolean } => {
-    if (val >= 10 || val <= 0) return { fixed: val, applied: false };
-    // Check if it has exactly 3 decimal places (e.g., 1.279, 1.077, 1.194)
+  const fixThousandsSep = (val: number | null): { fixed: number | null; applied: boolean } => {
+    if (val === null || val >= 10 || val <= 0) return { fixed: val, applied: false };
     const str = String(val);
     const dotIdx = str.indexOf('.');
     if (dotIdx === -1) return { fixed: val, applied: false };
@@ -222,20 +218,19 @@ function postValidateElectroMeasures(measures: ProductMeasures['measures'], fami
     return { fixed: val, applied: false };
   };
 
-  let fix3Applied = false;
-  const a = fixThousandsSep(measures.ancho_cm!);
-  const h = fixThousandsSep(measures.alto_cm!);
-  const p = fixThousandsSep(measures.profundidad_cm!);
+  const a = fixThousandsSep(measures.ancho_cm);
+  const h = fixThousandsSep(measures.alto_cm);
+  const p = fixThousandsSep(measures.profundidad_cm);
   if (a.applied || h.applied || p.applied) {
     measures.ancho_cm = a.fixed;
     measures.alto_cm = h.fixed;
     measures.profundidad_cm = p.fixed;
-    fix3Applied = true;
     fixes.push('fix3_thousands_separator');
   }
 
   // Fix 1: NxNxN — all 3 dims identical → spec number replicated as dims → unreliable
-  if (measures.ancho_cm === measures.alto_cm && measures.alto_cm === measures.profundidad_cm) {
+  if (measures.ancho_cm !== null && measures.alto_cm !== null && measures.profundidad_cm !== null &&
+      measures.ancho_cm === measures.alto_cm && measures.alto_cm === measures.profundidad_cm) {
     measures.ancho_cm = null;
     measures.alto_cm = null;
     measures.profundidad_cm = null;
@@ -244,28 +239,31 @@ function postValidateElectroMeasures(measures: ProductMeasures['measures'], fami
     return fixes;
   }
 
-  // Fix 2: mm parsed as cm — dims > 400 for electro are likely in mm
-  const dims = [measures.ancho_cm!, measures.alto_cm!, measures.profundidad_cm!];
-  const overCount = dims.filter(d => d > 400).length;
-  if (overCount >= 2) {
-    // All dims likely in mm → divide all by 10
-    measures.ancho_cm = Math.round(measures.ancho_cm! / 10 * 100) / 100;
-    measures.alto_cm = Math.round(measures.alto_cm! / 10 * 100) / 100;
-    measures.profundidad_cm = Math.round(measures.profundidad_cm! / 10 * 100) / 100;
-    fixes.push('fix2_mm_to_cm_all');
-  } else if (overCount === 1) {
-    // Only 1 dim > 400 and the others < 100 → that specific dim is in mm
-    if (measures.ancho_cm! > 400 && measures.alto_cm! < 100 && measures.profundidad_cm! < 100) {
-      measures.ancho_cm = Math.round(measures.ancho_cm! / 10 * 100) / 100;
-      fixes.push('fix2_mm_to_cm_ancho');
-    }
-    if (measures.alto_cm! > 400 && measures.ancho_cm! < 100 && measures.profundidad_cm! < 100) {
-      measures.alto_cm = Math.round(measures.alto_cm! / 10 * 100) / 100;
-      fixes.push('fix2_mm_to_cm_alto');
-    }
-    if (measures.profundidad_cm! > 400 && measures.ancho_cm! < 100 && measures.alto_cm! < 100) {
-      measures.profundidad_cm = Math.round(measures.profundidad_cm! / 10 * 100) / 100;
-      fixes.push('fix2_mm_to_cm_prof');
+  // Fix 2: mm parsed as cm — dims > 200 for electro are likely in mm (P0.1: relaxed from 400)
+  // Now handles products with 2 or 3 dims
+  const presentDims: Array<{ field: 'ancho_cm' | 'alto_cm' | 'profundidad_cm'; value: number }> = [];
+  if (measures.ancho_cm !== null) presentDims.push({ field: 'ancho_cm', value: measures.ancho_cm });
+  if (measures.alto_cm !== null) presentDims.push({ field: 'alto_cm', value: measures.alto_cm });
+  if (measures.profundidad_cm !== null) presentDims.push({ field: 'profundidad_cm', value: measures.profundidad_cm });
+
+  if (presentDims.length >= 2) {
+    const overCount = presentDims.filter(d => d.value > 200).length;
+    const underCount = presentDims.filter(d => d.value < 100).length;
+
+    if (overCount >= 2) {
+      // Most dims likely in mm → divide all by 10
+      for (const d of presentDims) {
+        measures[d.field] = Math.round(d.value / 10 * 100) / 100;
+      }
+      fixes.push('fix2_mm_to_cm_all');
+    } else if (overCount === 1 && underCount === presentDims.length - 1) {
+      // Only 1 dim > 200 and all others < 100 → that specific dim is in mm
+      for (const d of presentDims) {
+        if (d.value > 200) {
+          measures[d.field] = Math.round(d.value / 10 * 100) / 100;
+          fixes.push(`fix2_mm_to_cm_${d.field.replace('_cm', '')}`);
+        }
+      }
     }
   }
 
@@ -277,6 +275,142 @@ function postValidateElectroMeasures(measures: ProductMeasures['measures'], fami
   }
 
   return fixes;
+}
+
+/**
+ * P0.2: Detect NxNxN pattern in muebles — 3 identical dims for non-cube furniture → null dims
+ */
+function postValidateMuebleNxNxN(measures: ProductMeasures['measures'], familia: string, desc: string): string[] {
+  const familiaPrefix = (familia || '').split('.')[0].replace(/^0+/, '');
+  if (familiaPrefix !== '1') return []; // Only muebles
+
+  const { ancho_cm, alto_cm, profundidad_cm } = measures;
+  if (ancho_cm === null || alto_cm === null || profundidad_cm === null) return [];
+
+  if (ancho_cm === alto_cm && alto_cm === profundidad_cm) {
+    const upperDesc = (desc || '').toUpperCase();
+    if (/\b(PUF|PUFF|CAJA|CUBO|OTTOMAN|OTOMAN)\b/.test(upperDesc)) return [];
+    measures.ancho_cm = null;
+    measures.alto_cm = null;
+    measures.profundidad_cm = null;
+    measures.volumen_m3 = null;
+    return ['fix_mueble_nxnxn_nulled'];
+  }
+  return [];
+}
+
+/**
+ * P1.1: Fix supplier dims ÷10 — all dims < 20cm but desc NxN has 5-15x larger values → use desc dims
+ */
+function postValidateSmallDimsFromDesc(measures: ProductMeasures['measures'], desc: string, isComposite: boolean): string[] {
+  if (isComposite) return [];
+  const { ancho_cm, alto_cm, profundidad_cm } = measures;
+  if (ancho_cm === null || alto_cm === null || profundidad_cm === null) return [];
+  if (ancho_cm >= 20 || alto_cm >= 20 || profundidad_cm >= 20) return [];
+
+  const descDims = extractMeasuresFromText(desc);
+  const descVals = [descDims.ancho_cm, descDims.alto_cm, descDims.profundidad_cm || descDims.largo_cm].filter(v => v !== null) as number[];
+  if (descVals.length < 2) return [];
+
+  const parsedVals = [ancho_cm, alto_cm, profundidad_cm];
+  const validRatios = descVals.map((dv, i) => parsedVals[i] > 0 ? dv / parsedVals[i] : 0).filter(r => r > 0);
+  if (validRatios.length < 2) return [];
+  const avgRatio = validRatios.reduce((a, b) => a + b, 0) / validRatios.length;
+
+  if (avgRatio >= 5 && avgRatio <= 15) {
+    measures.ancho_cm = descDims.ancho_cm ?? ancho_cm * 10;
+    measures.alto_cm = descDims.alto_cm ?? alto_cm * 10;
+    measures.profundidad_cm = descDims.profundidad_cm || descDims.largo_cm || profundidad_cm * 10;
+    if (measures.ancho_cm && measures.alto_cm && measures.profundidad_cm) {
+      measures.volumen_m3 = Math.round(
+        (measures.ancho_cm * measures.alto_cm * measures.profundidad_cm) / 1000000 * 10000
+      ) / 10000;
+    }
+    return ['fix_small_dims_from_desc'];
+  }
+  return [];
+}
+
+/**
+ * P1.2: Fix merged dm→cm — source=merged, all dims < 20cm, big furniture keywords → ×10
+ */
+function postValidateMergedDm(measures: ProductMeasures['measures'], source: string, desc: string): string[] {
+  if (source !== 'merged') return [];
+  const { ancho_cm, alto_cm, profundidad_cm } = measures;
+  if (ancho_cm === null || alto_cm === null || profundidad_cm === null) return [];
+  if (ancho_cm >= 20 || alto_cm >= 20 || profundidad_cm >= 20) return [];
+
+  const upperDesc = (desc || '').toUpperCase();
+  if (!/\b(SOFA|SOF[AÁ]|MESA|ARMARIO|CAMA|C[OÓ]MODA|APARADOR|ESTANTER[IÍ]A|SILL[OÓ]N)\b/.test(upperDesc)) return [];
+
+  measures.ancho_cm = Math.round(ancho_cm * 10 * 100) / 100;
+  measures.alto_cm = Math.round(alto_cm * 10 * 100) / 100;
+  measures.profundidad_cm = Math.round(profundidad_cm * 10 * 100) / 100;
+  if (measures.ancho_cm && measures.alto_cm && measures.profundidad_cm) {
+    measures.volumen_m3 = Math.round(
+      (measures.ancho_cm * measures.alto_cm * measures.profundidad_cm) / 1000000 * 10000
+    ) / 10000;
+  }
+  return ['fix_merged_dm_to_cm'];
+}
+
+/**
+ * P2.2: Cross-validate desc NxN vs parsed dims — if >30% mismatch → use desc values
+ */
+function postValidateCrossValidation(measures: ProductMeasures['measures'], desc: string, isComposite: boolean): string[] {
+  if (isComposite) return [];
+  const { ancho_cm, alto_cm, profundidad_cm } = measures;
+  if (ancho_cm === null || alto_cm === null) return [];
+
+  const descDims = extractMeasuresFromText(desc);
+  const pairs: Array<{ parsed: number | null; descVal: number | null; field: 'ancho_cm' | 'alto_cm' | 'profundidad_cm' }> = [
+    { parsed: ancho_cm, descVal: descDims.ancho_cm, field: 'ancho_cm' },
+    { parsed: alto_cm, descVal: descDims.alto_cm, field: 'alto_cm' },
+    { parsed: profundidad_cm, descVal: descDims.profundidad_cm || descDims.largo_cm, field: 'profundidad_cm' },
+  ];
+
+  let mismatches = 0;
+  let total = 0;
+  for (const { parsed, descVal } of pairs) {
+    if (parsed !== null && descVal !== null && parsed > 0 && descVal > 0) {
+      total++;
+      const diff = Math.abs(parsed - descVal) / Math.max(parsed, descVal);
+      if (diff > 0.3) mismatches++;
+    }
+  }
+
+  if (total >= 2 && mismatches > 0 && mismatches / total > 0.3) {
+    for (const { descVal, field } of pairs) {
+      if (descVal !== null && descVal > 0) {
+        measures[field] = descVal;
+      }
+    }
+    if (measures.ancho_cm && measures.alto_cm && measures.profundidad_cm) {
+      measures.volumen_m3 = Math.round(
+        (measures.ancho_cm * measures.alto_cm * measures.profundidad_cm) / 1000000 * 10000
+      ) / 10000;
+    }
+    return ['fix_cross_validation_desc'];
+  }
+  return [];
+}
+
+/**
+ * P2.1: Axis swap for tall furniture — VITRINA/ESTANTERIA/LIBRERIA with alto < profundidad → swap
+ */
+function postValidateAxisSwap(measures: ProductMeasures['measures'], desc: string): string[] {
+  const { alto_cm, profundidad_cm } = measures;
+  if (alto_cm === null || profundidad_cm === null) return [];
+
+  const upperDesc = (desc || '').toUpperCase();
+  if (!/\b(VITRINA|ESTANTER[IÍ]A|LIBRER[IÍ]A|COLUMNA)\b/.test(upperDesc)) return [];
+
+  if (alto_cm < profundidad_cm) {
+    measures.alto_cm = profundidad_cm;
+    measures.profundidad_cm = alto_cm;
+    return ['fix_axis_swap_tall'];
+  }
+  return [];
 }
 
 function processProduct(product: Record<string, any>): ProductMeasures {
@@ -384,6 +518,41 @@ function processProduct(product: Record<string, any>): ProductMeasures {
     }
   }
 
+  // P0.2: NxNxN for muebles
+  const muebleNxNxNFixes = postValidateMuebleNxNxN(finalMeasures, familia, desc);
+  if (muebleNxNxNFixes.length > 0) {
+    warnings.push(...muebleNxNxNFixes);
+    confidence = 0.1;
+  }
+
+  // P1.1: Small dims from description (supplier ÷10 pattern)
+  const smallDimsFixes = postValidateSmallDimsFromDesc(finalMeasures, desc, isComposite);
+  if (smallDimsFixes.length > 0) {
+    warnings.push(...smallDimsFixes);
+    confidence = Math.min(confidence, 0.6);
+  }
+
+  // P1.2: Merged dm→cm
+  const mergedDmFixes = postValidateMergedDm(finalMeasures, source, desc);
+  if (mergedDmFixes.length > 0) {
+    warnings.push(...mergedDmFixes);
+    confidence = Math.min(confidence, 0.6);
+  }
+
+  // P2.2: Cross-validation desc vs parsed
+  const crossValFixes = postValidateCrossValidation(finalMeasures, desc, isComposite);
+  if (crossValFixes.length > 0) {
+    warnings.push(...crossValFixes);
+    confidence = Math.min(confidence, 0.65);
+  }
+
+  // P2.1: Axis swap for tall furniture
+  const axisSwapFixes = postValidateAxisSwap(finalMeasures, desc);
+  if (axisSwapFixes.length > 0) {
+    warnings.push(...axisSwapFixes);
+    confidence = Math.min(confidence, 0.75);
+  }
+
   return {
     'COD.ARTICULO': cod,
     measures: finalMeasures,
@@ -430,13 +599,13 @@ export async function executeStage3(jobId: string): Promise<void> {
       sourceCounts[p.source] = (sourceCounts[p.source] || 0) + 1;
     }
 
-    // Count electro validation fixes applied
-    const fixCounts = { fix1_nxnxn: 0, fix2_mm_to_cm: 0, fix3_thousands: 0 };
+    // Count all validation fixes applied
+    const fixCounts: Record<string, number> = {};
     for (const p of normalized) {
       for (const w of p.warnings) {
-        if (w === 'fix1_nxnxn_nulled') fixCounts.fix1_nxnxn++;
-        if (w.startsWith('fix2_mm_to_cm')) fixCounts.fix2_mm_to_cm++;
-        if (w === 'fix3_thousands_separator') fixCounts.fix3_thousands++;
+        if (w.startsWith('fix')) {
+          fixCounts[w] = (fixCounts[w] || 0) + 1;
+        }
       }
     }
 

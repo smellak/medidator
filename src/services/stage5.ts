@@ -129,6 +129,29 @@ function checkOutliers(product: any): OutlierEntry[] {
   return issues;
 }
 
+/**
+ * P0.3: Fix peso unit errors — grams coded as kg
+ */
+function fixPesoUnits(product: any): string | null {
+  const m = product.measures;
+  if (!m || m.peso_kg === null || m.peso_kg <= 0) return null;
+  const type = product.product_type || 'otro';
+
+  // peso > 5000 for any type → probably grams, divide by 1000
+  if (m.peso_kg > 5000) {
+    m.peso_kg = Math.round(m.peso_kg / 1000 * 100) / 100;
+    return 'fix_peso_g_to_kg';
+  }
+
+  // peso > 300 for electro → probably ×10 error, divide by 10
+  if (type === 'electrodomestico' && m.peso_kg > 300) {
+    m.peso_kg = Math.round(m.peso_kg / 10 * 100) / 100;
+    return 'fix_peso_electro_div10';
+  }
+
+  return null;
+}
+
 export async function executeStage5(jobId: string): Promise<void> {
   const job = store.getJob(jobId);
   if (!job) throw new Error(`Job ${jobId} not found`);
@@ -148,7 +171,15 @@ export async function executeStage5(jobId: string): Promise<void> {
     const allOutliers: OutlierEntry[] = [];
     const excludedCods = new Set<string>();
 
+    let pesoFixCount = 0;
     for (const p of products) {
+      // P0.3: Fix peso units before outlier detection
+      const pesoFix = fixPesoUnits(p);
+      if (pesoFix) {
+        p.warnings = p.warnings || [];
+        p.warnings.push(pesoFix);
+        pesoFixCount++;
+      }
       const issues = checkOutliers(p);
       allOutliers.push(...issues);
       if (issues.some(i => i.severity === 'ERROR')) {
@@ -175,6 +206,7 @@ export async function executeStage5(jobId: string): Promise<void> {
       errors: excludedCods.size,
       excluded: excludedCods.size,
       outlier_count: allOutliers.length,
+      peso_fixes: pesoFixCount,
       by_rule: {} as Record<string, number>,
       by_severity: { ERROR: 0, WARNING: 0, INFO: 0 } as Record<string, number>,
     };

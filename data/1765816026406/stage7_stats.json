@@ -1,75 +1,75 @@
 {
   "pipeline": {
     "job_id": "1765816026406",
-    "processed_at": "2026-04-09T03:38:34.100Z",
+    "processed_at": "2026-04-09T04:49:03.281Z",
     "total_products": 16009,
-    "clean_products": 15922,
-    "excluded_products": 87,
+    "clean_products": 15947,
+    "excluded_products": 62,
     "stages_completed": 7
   },
   "coverage": {
     "with_numeric_dims": {
-      "count": 1029,
+      "count": 1025,
       "pct": 6.4
     },
     "with_html_measures": {
-      "count": 15920,
-      "pct": 99.4
+      "count": 15945,
+      "pct": 99.6
     },
     "with_parsed_measures": {
-      "count": 15238,
-      "pct": 95.2
+      "count": 15210,
+      "pct": 95
     },
     "with_all_dimensions": {
-      "count": 12454,
-      "pct": 77.8
+      "count": 12418,
+      "pct": 77.6
     },
     "with_weight": {
-      "count": 2222,
-      "pct": 13.9
+      "count": 2257,
+      "pct": 14.1
     },
     "composites": {
-      "count": 1826,
+      "count": 1829,
       "pct": 11.4
     }
   },
   "distributions": {
     "ancho_cm": {
-      "count": 14621,
+      "count": 14593,
       "min": 0.1,
-      "max": 492,
-      "avg": 114.4,
+      "max": 450,
+      "avg": 114.2,
       "median": 90,
       "p25": 48.5,
       "p75": 160,
       "histogram": {
-        "0-50": 3902,
-        "50-100": 4274,
-        "100-150": 2456,
-        "150-200": 1664,
-        "200-300": 2101,
-        "300+": 224
+        "0-50": 3894,
+        "50-100": 4286,
+        "100-150": 2437,
+        "150-200": 1666,
+        "200-300": 2096,
+        "300+": 214
       }
     },
     "alto_cm": {
-      "count": 14002,
+      "count": 13974,
       "min": 0.1,
-      "max": 470,
-      "avg": 76.3,
+      "max": 457,
+      "avg": 75.6,
       "median": 79,
-      "p25": 42,
+      "p25": 41,
       "p75": 100,
       "histogram": {
-        "0-50": 4221,
-        "50-100": 6437,
-        "100-150": 2595,
-        "150-200": 557,
-        "200-300": 178,
-        "300+": 14
+        "0-50": 4246,
+        "50-100": 6448,
+        "100-150": 2588,
+        "150-200": 556,
+        "200-300": 129,
+        "300+": 7
       }
     },
     "profundidad_cm": {
-      "count": 13733,
+      "count": 13697,
       "min": 0.1,
       "max": 472,
       "avg": 79,
@@ -77,123 +77,123 @@
       "p25": 40,
       "p75": 100,
       "histogram": {
-        "0-50": 5002,
-        "50-100": 5882,
-        "100-150": 1213,
-        "150-200": 1446,
-        "200-300": 186,
+        "0-50": 4993,
+        "50-100": 5880,
+        "100-150": 1195,
+        "150-200": 1443,
+        "200-300": 182,
         "300+": 4
       }
     },
     "peso_kg": {
-      "count": 2222,
+      "count": 2257,
       "min": 0,
       "max": 350,
-      "avg": 25.9,
-      "median": 12,
+      "avg": 26.1,
+      "median": 12.2,
       "p25": 1.5,
-      "p75": 38.6,
+      "p75": 39,
       "histogram": {
-        "0-5": 811,
-        "5-10": 234,
-        "10-25": 345,
-        "25-50": 494,
-        "50-100": 253,
-        "100-200": 65,
+        "0-5": 813,
+        "5-10": 242,
+        "10-25": 352,
+        "25-50": 503,
+        "50-100": 260,
+        "100-200": 67,
         "200+": 20
       }
     },
     "volumen_m3": {
-      "count": 12414,
+      "count": 12403,
       "min": 0,
-      "max": 38.4,
+      "max": 30.7,
       "avg": 0.9,
       "median": 0.5,
       "p25": 0.1,
-      "p75": 1.2,
+      "p75": 1.1,
       "histogram": {
-        "0-0.1": 2316,
-        "0.1-0.5": 4016,
-        "0.5-1": 2469,
-        "1-2": 1565,
-        "2-5": 2023,
-        "5+": 25
+        "0-0.1": 2373,
+        "0.1-0.5": 4018,
+        "0.5-1": 2430,
+        "1-2": 1557,
+        "2-5": 2006,
+        "5+": 19
       }
     }
   },
   "by_type": {
     "electrodomestico": {
-      "count": 3158,
-      "with_measures": 2967,
+      "count": 3188,
+      "with_measures": 2997,
       "ancho_cm": {
-        "count": 2967,
+        "count": 2997,
         "min": 0.1,
-        "max": 492,
-        "avg": 54.7,
-        "median": 55,
-        "p25": 24.6,
-        "p75": 62.5
+        "max": 450,
+        "avg": 53.2,
+        "median": 54.7,
+        "p25": 24.8,
+        "p75": 60.5
       },
       "alto_cm": {
-        "count": 2884,
+        "count": 2914,
         "min": 0.2,
-        "max": 470,
-        "avg": 63,
-        "median": 46.1,
-        "p25": 24.8,
-        "p75": 84.8
+        "max": 457,
+        "avg": 58.8,
+        "median": 44,
+        "p25": 24.5,
+        "p75": 84.5
       },
       "profundidad_cm": {
-        "count": 2407,
+        "count": 2448,
         "min": 0.2,
         "max": 472,
-        "avg": 44.1,
+        "avg": 43.7,
         "median": 40,
-        "p25": 23.7,
-        "p75": 58.5
+        "p25": 23.5,
+        "p75": 58
       },
       "peso_kg": {
-        "count": 1231,
+        "count": 1270,
         "min": 0,
         "max": 165,
-        "avg": 19.9,
-        "median": 6.2,
+        "avg": 20.4,
+        "median": 7,
         "p25": 0.5,
         "p75": 35
       }
     },
     "mueble": {
-      "count": 11783,
-      "with_measures": 10680,
+      "count": 11778,
+      "with_measures": 10622,
       "ancho_cm": {
-        "count": 10680,
+        "count": 10622,
         "min": 0.1,
         "max": 352,
-        "avg": 135.7,
+        "avg": 136.2,
         "median": 120,
-        "p25": 64,
-        "p75": 195
+        "p25": 65,
+        "p75": 196
       },
       "alto_cm": {
-        "count": 10173,
+        "count": 10115,
         "min": 0.1,
         "max": 400,
-        "avg": 79.9,
-        "median": 82,
+        "avg": 80.2,
+        "median": 82.3,
         "p25": 50,
         "p75": 102
       },
       "profundidad_cm": {
-        "count": 10361,
+        "count": 10284,
         "min": 0.1,
         "max": 304,
-        "avg": 90,
+        "avg": 90.3,
         "median": 90,
         "p25": 47,
         "p75": 103
       },
       "peso_kg": {
-        "count": 773,
+        "count": 769,
         "min": 0.1,
         "max": 350,
         "avg": 33.1,
@@ -284,20 +284,20 @@
     }
   },
   "quality": {
-    "outliers_detected": 1852,
-    "products_excluded": 87,
-    "products_with_warnings": 1477,
-    "parse_success_rate": 95.2,
-    "avg_confidence": 0.82
+    "outliers_detected": 1701,
+    "products_excluded": 62,
+    "products_with_warnings": 1443,
+    "parse_success_rate": 95,
+    "avg_confidence": 0.81
   },
   "composites": {
-    "total": 1826,
+    "total": 1829,
     "avg_components": 2.6,
     "max_components": 9,
     "component_distribution": {
-      "0-2": 1115,
+      "0-2": 1116,
       "2-3": 471,
-      "3-5": 188,
+      "3-5": 190,
       "5-10": 52,
       "10+": 0
     }
@@ -313,37 +313,37 @@
     "estimable": 15643
   },
   "stage6_summary": {
-    "total_products": 15922,
+    "total_products": 15947,
     "total_sets": 8,
     "sets": {
       "by_family": {
         "groups": 4,
-        "products": 15922
+        "products": 15947
       },
       "by_linea": {
         "groups": 21,
-        "products": 15922
+        "products": 15947
       },
       "by_marca": {
-        "groups": 793,
-        "products": 15922
+        "groups": 794,
+        "products": 15947
       },
       "by_type": {
         "groups": 4,
-        "products": 15922
+        "products": 15947
       },
       "by_completeness": {
         "groups": 5,
-        "products": 15922
+        "products": 15947
       },
       "with_measures": {
-        "products": 12454
+        "products": 12418
       },
       "composites": {
-        "products": 1826
+        "products": 1829
       },
       "missing_measures": {
-        "products": 684
+        "products": 737
       }
     }
   }
