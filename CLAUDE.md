@@ -80,9 +80,9 @@ validate_200.js         # Validation script: 200-product coherence check via Gem
 
 1. **stage1_ingest_normalize** — Parse Excel (.xlsx/.xls), normalize 14 columns, store as JSON
 2. **stage2_paquete_estimable** — Classify each product: complete / html_rich / partial / description_only / empty; detect composites via `<strong>` tag count
-3. **stage3_normalize_measures** — Parse HTML `MEDIDAS COLECCION` field with regex (named dims, NxN format, Spanish units); merge with numeric Excel dims (Alto/Ancho/Largo in meters × 100); calculate volume
+3. **stage3_normalize_measures** — Parse HTML `MEDIDAS COLECCION` field with regex (named dims, NxN format, Spanish units); merge with numeric Excel dims (Alto/Ancho/Largo in meters × 100); calculate volume; **post-validation fixes**: electro mm→cm (threshold >200), NxNxN nulling (electro+mueble), thousands separator, small dims from desc, merged dm→cm, cross-validation, axis swap for tall furniture
 4. **stage4_ia_enrichment** — Classify by FAMILIA prefix (mueble/electro/accesorio); extract dims from description; **Gemini EAN lookup for electrodomésticos only** (1896 electros with valid EAN, 96% found); global cache at `data/ean_cache.json`
-5. **stage5_outliers_clean** — 7 outlier rules (dim > 500cm, dim > 300cm, dim < 5cm for mueble, peso > 500kg, densidad alta/baja, M3 incoherente); ERROR → excluded, WARNING → flagged
+5. **stage5_outliers_clean** — 7 outlier rules (dim > 500cm, dim > 300cm, dim < 5cm for mueble, peso > 500kg, densidad alta/baja, M3 incoherente); **peso unit fix** (electro >300kg ÷10, any >5000kg ÷1000); ERROR → excluded, WARNING → flagged
 6. **stage6_filter_sets** — 8 grouping sets: by_family, by_linea, by_marca, by_type, by_completeness, with_measures, composites, missing_measures
 7. **stage7_stats** — Coverage stats, dimension distributions with histograms, per-type analysis, quality metrics, composite stats; sets job.status = 'completed'
 
@@ -91,7 +91,8 @@ validate_200.js         # Validation script: 200-product coherence check via Gem
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `PORT` | No | Server port (default: 3000) |
-| `GEMINI_API_KEY` | Yes (for stage4 AI) | Google Gemini API key. **NEVER hardcode — env var only** |
+| `GEMINI_API_KEY` | No (fallback) | Google Gemini API key fallback. **NEVER hardcode — env var only** |
+| `CHS_PLATFORM_URL` | Yes (for stage4 AI) | CHS Platform internal URL for centralized AI key resolution |
 
 ## Security Rules
 
@@ -131,7 +132,7 @@ GEMINI_API_KEY=... node validate_200.js
 - **Coolify app UUID**: `wk8sggsg4koowwccssww4c4s`
 - **Domain**: `medidas.centrohogarsanchez.es`
 - **Docker**: Multi-stage build (deps → builder → runner), Node 20 Alpine
-- **Current container**: `wk8sggsg4koowwccssww4c4s-170202987601`
+- **Current container**: `wk8sggsg4koowwccssww4c4s-045031474110`
 
 ### Traefik ForwardAuth
 
@@ -212,12 +213,37 @@ Uses CHS Platform Design System v1:
 - **Icons**: Lucide React
 - **Tailwind**: v4 with `@tailwindcss/vite` plugin, custom `@theme` tokens in `client/index.css`
 
+## Coherence Audit Results (v2, 2026-04-09)
+
+Two audits performed (200 + 500 product samples). Current pipeline coherence: **~92%** (up from 86% in audit v1).
+
+### Post-validation fixes in stage3 (`postValidate*` functions):
+| Fix | Description | Products Fixed |
+|-----|-------------|----------------|
+| fix1_nxnxn_nulled | Electro: 3 identical dims → null | 103 |
+| fix_mueble_nxnxn_nulled | Mueble: 3 identical dims (no PUF/CUBO) → null | 128 |
+| fix2_mm_to_cm | Electro: dims >200cm → ÷10 (mm→cm), handles partial dims | 188 |
+| fix3_thousands_separator | Electro: "1.279" → 127.9cm | 4 |
+| fix_small_dims_from_desc | All dims <20cm + desc NxN 5-15x bigger → use desc | 0 (edge) |
+| fix_merged_dm_to_cm | Merged source, all dims <20, big furniture → ×10 | 0 (edge) |
+| fix_cross_validation_desc | Desc NxN >30% mismatch vs parsed → use desc | 0 (edge) |
+| fix_axis_swap_tall | VITRINA/ESTANTERIA: alto < prof → swap | 0 (edge) |
+
+### Post-validation fix in stage5 (`fixPesoUnits`):
+- peso_kg >5000 → ÷1000 (grams→kg)
+- Electro peso_kg >300 → ÷10
+
+### Remaining known anomalies:
+- **46 muebles with dim >400cm**: possibly legitimate large furniture or HTML parsing errors
+- **21 NxNxN residual**: products with identical dims that don't match filter criteria
+- **66 products with all dims <10cm**: edge cases not caught by current heuristics
+
 ## Known Issues / TODOs
 
-- **912 products without measures**: mostly cuchillos/utensilios classified as html_rich but with unparseable HTML
-- **935 muebles flagged dim < 5cm**: many are cabeceros/paneles with legitimately thin profundidad
+- **~737 products without measures**: mostly cuchillos/utensilios with unparseable HTML
+- **447 muebles flagged dim < 5cm**: many are cabeceros/paneles with legitimately thin profundidad
 - **82 products with dirty FAMILIA**: irregular formats like "0", "90001;0;00003"
-- **peso_kg 80.7% empty**: weight data is sparse across the catalog
+- **peso_kg ~80% empty**: weight data is sparse across the catalog
 - **No persistent volume**: data/ and uploads/ are ephemeral — lost on container restart
 - **Validation pending**: 200-product coherence check (`validate_200.js`) needs new GEMINI_API_KEY to run
 - **Conformidad CHS Platform**: 2/11 deberes cumplidos (solo health + favicon)
