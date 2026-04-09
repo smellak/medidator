@@ -1,10 +1,10 @@
 {
   "pipeline": {
     "job_id": "1765816026406",
-    "processed_at": "2026-04-07T14:23:12.874Z",
+    "processed_at": "2026-04-09T03:38:34.100Z",
     "total_products": 16009,
-    "clean_products": 15758,
-    "excluded_products": 251,
+    "clean_products": 15922,
+    "excluded_products": 87,
     "stages_completed": 7
   },
   "coverage": {
@@ -13,153 +13,153 @@
       "pct": 6.4
     },
     "with_html_measures": {
-      "count": 15756,
-      "pct": 98.4
+      "count": 15920,
+      "pct": 99.4
     },
     "with_parsed_measures": {
-      "count": 15090,
-      "pct": 94.3
+      "count": 15238,
+      "pct": 95.2
     },
     "with_all_dimensions": {
-      "count": 12295,
-      "pct": 76.8
+      "count": 12454,
+      "pct": 77.8
     },
     "with_weight": {
-      "count": 2038,
-      "pct": 12.7
+      "count": 2222,
+      "pct": 13.9
     },
     "composites": {
-      "count": 1820,
+      "count": 1826,
       "pct": 11.4
     }
   },
   "distributions": {
     "ancho_cm": {
-      "count": 14473,
+      "count": 14621,
       "min": 0.1,
       "max": 492,
-      "avg": 115.3,
+      "avg": 114.4,
       "median": 90,
-      "p25": 48,
+      "p25": 48.5,
       "p75": 160,
       "histogram": {
-        "0-50": 3872,
-        "50-100": 4143,
-        "100-150": 2446,
-        "150-200": 1665,
-        "200-300": 2117,
-        "300+": 230
+        "0-50": 3902,
+        "50-100": 4274,
+        "100-150": 2456,
+        "150-200": 1664,
+        "200-300": 2101,
+        "300+": 224
       }
     },
     "alto_cm": {
-      "count": 13842,
+      "count": 14002,
       "min": 0.1,
-      "max": 487,
-      "avg": 76.7,
+      "max": 470,
+      "avg": 76.3,
       "median": 79,
       "p25": 42,
       "p75": 100,
       "histogram": {
-        "0-50": 4175,
-        "50-100": 6332,
-        "100-150": 2583,
-        "150-200": 539,
-        "200-300": 190,
-        "300+": 23
+        "0-50": 4221,
+        "50-100": 6437,
+        "100-150": 2595,
+        "150-200": 557,
+        "200-300": 178,
+        "300+": 14
       }
     },
     "profundidad_cm": {
-      "count": 13586,
+      "count": 13733,
       "min": 0.1,
-      "max": 415.5,
-      "avg": 79.8,
+      "max": 472,
+      "avg": 79,
       "median": 70,
       "p25": 40,
       "p75": 100,
       "histogram": {
-        "0-50": 4919,
-        "50-100": 5794,
+        "0-50": 5002,
+        "50-100": 5882,
         "100-150": 1213,
-        "150-200": 1448,
-        "200-300": 202,
-        "300+": 10
+        "150-200": 1446,
+        "200-300": 186,
+        "300+": 4
       }
     },
     "peso_kg": {
-      "count": 2038,
+      "count": 2222,
       "min": 0,
       "max": 350,
-      "avg": 24.8,
-      "median": 10.5,
-      "p25": 0.9,
-      "p75": 37,
+      "avg": 25.9,
+      "median": 12,
+      "p25": 1.5,
+      "p75": 38.6,
       "histogram": {
-        "0-5": 793,
-        "5-10": 214,
-        "10-25": 325,
-        "25-50": 422,
-        "50-100": 203,
-        "100-200": 61,
+        "0-5": 811,
+        "5-10": 234,
+        "10-25": 345,
+        "25-50": 494,
+        "50-100": 253,
+        "100-200": 65,
         "200+": 20
       }
     },
     "volumen_m3": {
-      "count": 12252,
+      "count": 12414,
       "min": 0,
-      "max": 71.7,
+      "max": 38.4,
       "avg": 0.9,
       "median": 0.5,
-      "p25": 0.2,
+      "p25": 0.1,
       "p75": 1.2,
       "histogram": {
-        "0-0.1": 2236,
-        "0.1-0.5": 3934,
-        "0.5-1": 2449,
-        "1-2": 1560,
+        "0-0.1": 2316,
+        "0.1-0.5": 4016,
+        "0.5-1": 2469,
+        "1-2": 1565,
         "2-5": 2023,
-        "5+": 50
+        "5+": 25
       }
     }
   },
   "by_type": {
     "electrodomestico": {
-      "count": 2994,
-      "with_measures": 2819,
+      "count": 3158,
+      "with_measures": 2967,
       "ancho_cm": {
-        "count": 2819,
+        "count": 2967,
         "min": 0.1,
         "max": 492,
-        "avg": 56.1,
-        "median": 54,
-        "p25": 22,
-        "p75": 64
+        "avg": 54.7,
+        "median": 55,
+        "p25": 24.6,
+        "p75": 62.5
       },
       "alto_cm": {
-        "count": 2724,
+        "count": 2884,
         "min": 0.2,
-        "max": 487,
-        "avg": 64.2,
-        "median": 44.5,
+        "max": 470,
+        "avg": 63,
+        "median": 46.1,
         "p25": 24.8,
-        "p75": 84.7
+        "p75": 84.8
       },
       "profundidad_cm": {
-        "count": 2260,
+        "count": 2407,
         "min": 0.2,
-        "max": 415.5,
-        "avg": 46.8,
+        "max": 472,
+        "avg": 44.1,
         "median": 40,
-        "p25": 23.8,
-        "p75": 58.9
+        "p25": 23.7,
+        "p75": 58.5
       },
       "peso_kg": {
-        "count": 1047,
+        "count": 1231,
         "min": 0,
         "max": 165,
-        "avg": 16.7,
-        "median": 2.3,
-        "p25": 0.3,
-        "p75": 25
+        "avg": 19.9,
+        "median": 6.2,
+        "p25": 0.5,
+        "p75": 35
       }
     },
     "mueble": {
@@ -284,19 +284,19 @@
     }
   },
   "quality": {
-    "outliers_detected": 2480,
-    "products_excluded": 251,
-    "products_with_warnings": 1495,
-    "parse_success_rate": 94.3,
+    "outliers_detected": 1852,
+    "products_excluded": 87,
+    "products_with_warnings": 1477,
+    "parse_success_rate": 95.2,
     "avg_confidence": 0.82
   },
   "composites": {
-    "total": 1820,
+    "total": 1826,
     "avg_components": 2.6,
     "max_components": 9,
     "component_distribution": {
-      "0-2": 1110,
-      "2-3": 470,
+      "0-2": 1115,
+      "2-3": 471,
       "3-5": 188,
       "5-10": 52,
       "10+": 0
@@ -313,37 +313,37 @@
     "estimable": 15643
   },
   "stage6_summary": {
-    "total_products": 15758,
+    "total_products": 15922,
     "total_sets": 8,
     "sets": {
       "by_family": {
         "groups": 4,
-        "products": 15758
+        "products": 15922
       },
       "by_linea": {
         "groups": 21,
-        "products": 15758
+        "products": 15922
       },
       "by_marca": {
-        "groups": 792,
-        "products": 15758
+        "groups": 793,
+        "products": 15922
       },
       "by_type": {
         "groups": 4,
-        "products": 15758
+        "products": 15922
       },
       "by_completeness": {
         "groups": 5,
-        "products": 15758
+        "products": 15922
       },
       "with_measures": {
-        "products": 12295
+        "products": 12454
       },
       "composites": {
-        "products": 1820
+        "products": 1826
       },
       "missing_measures": {
-        "products": 668
+        "products": 684
       }
     }
   }

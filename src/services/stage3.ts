@@ -191,6 +191,94 @@ function parseHtmlMeasures(html: string): ComponentMeasures[] {
   return components;
 }
 
+/**
+ * Post-validate measures for electrodomésticos to fix systematic parsing errors:
+ * - Fix 1 (NxNxN): 3 identical dims → spec number replicated, not real dims → null
+ * - Fix 2 (mm→cm): dims > 400 in electro → likely mm parsed as cm → divide by 10
+ * - Fix 3 (decimal thousands): dim < 10 with 3-decimal-place pattern → Spanish thousands separator (1.279 = 1279mm)
+ * Returns array of applied fix descriptions for warnings.
+ */
+function postValidateElectroMeasures(measures: ProductMeasures['measures'], familia: string): string[] {
+  const familiaPrefix = (familia || '').split('.')[0].replace(/^0+/, '');
+  const isElectro = familiaPrefix === '2';
+  if (!isElectro) return [];
+
+  const { ancho_cm, alto_cm, profundidad_cm } = measures;
+  if (ancho_cm === null || alto_cm === null || profundidad_cm === null) return [];
+  const fixes: string[] = [];
+
+  // Fix 3: Detect Spanish thousands separator (e.g., 1.279 = 1279mm = 127.9cm)
+  // Check each dim: if value < 10 and has exactly 3 decimal digits → multiply by 100
+  const fixThousandsSep = (val: number): { fixed: number; applied: boolean } => {
+    if (val >= 10 || val <= 0) return { fixed: val, applied: false };
+    // Check if it has exactly 3 decimal places (e.g., 1.279, 1.077, 1.194)
+    const str = String(val);
+    const dotIdx = str.indexOf('.');
+    if (dotIdx === -1) return { fixed: val, applied: false };
+    const decimals = str.length - dotIdx - 1;
+    if (decimals === 3) {
+      return { fixed: val * 1000 / 10, applied: true }; // 1.279 → 1279mm → 127.9cm
+    }
+    return { fixed: val, applied: false };
+  };
+
+  let fix3Applied = false;
+  const a = fixThousandsSep(measures.ancho_cm!);
+  const h = fixThousandsSep(measures.alto_cm!);
+  const p = fixThousandsSep(measures.profundidad_cm!);
+  if (a.applied || h.applied || p.applied) {
+    measures.ancho_cm = a.fixed;
+    measures.alto_cm = h.fixed;
+    measures.profundidad_cm = p.fixed;
+    fix3Applied = true;
+    fixes.push('fix3_thousands_separator');
+  }
+
+  // Fix 1: NxNxN — all 3 dims identical → spec number replicated as dims → unreliable
+  if (measures.ancho_cm === measures.alto_cm && measures.alto_cm === measures.profundidad_cm) {
+    measures.ancho_cm = null;
+    measures.alto_cm = null;
+    measures.profundidad_cm = null;
+    measures.volumen_m3 = null;
+    fixes.push('fix1_nxnxn_nulled');
+    return fixes;
+  }
+
+  // Fix 2: mm parsed as cm — dims > 400 for electro are likely in mm
+  const dims = [measures.ancho_cm!, measures.alto_cm!, measures.profundidad_cm!];
+  const overCount = dims.filter(d => d > 400).length;
+  if (overCount >= 2) {
+    // All dims likely in mm → divide all by 10
+    measures.ancho_cm = Math.round(measures.ancho_cm! / 10 * 100) / 100;
+    measures.alto_cm = Math.round(measures.alto_cm! / 10 * 100) / 100;
+    measures.profundidad_cm = Math.round(measures.profundidad_cm! / 10 * 100) / 100;
+    fixes.push('fix2_mm_to_cm_all');
+  } else if (overCount === 1) {
+    // Only 1 dim > 400 and the others < 100 → that specific dim is in mm
+    if (measures.ancho_cm! > 400 && measures.alto_cm! < 100 && measures.profundidad_cm! < 100) {
+      measures.ancho_cm = Math.round(measures.ancho_cm! / 10 * 100) / 100;
+      fixes.push('fix2_mm_to_cm_ancho');
+    }
+    if (measures.alto_cm! > 400 && measures.ancho_cm! < 100 && measures.profundidad_cm! < 100) {
+      measures.alto_cm = Math.round(measures.alto_cm! / 10 * 100) / 100;
+      fixes.push('fix2_mm_to_cm_alto');
+    }
+    if (measures.profundidad_cm! > 400 && measures.ancho_cm! < 100 && measures.alto_cm! < 100) {
+      measures.profundidad_cm = Math.round(measures.profundidad_cm! / 10 * 100) / 100;
+      fixes.push('fix2_mm_to_cm_prof');
+    }
+  }
+
+  // Recalculate volume after fixes
+  if (measures.ancho_cm && measures.alto_cm && measures.profundidad_cm) {
+    measures.volumen_m3 = Math.round(
+      (measures.ancho_cm * measures.alto_cm * measures.profundidad_cm) / 1000000 * 10000
+    ) / 10000;
+  }
+
+  return fixes;
+}
+
 function processProduct(product: Record<string, any>): ProductMeasures {
   const cod = String(product['COD.ARTICULO'] || '');
   const html = String(product['MEDIDAS COLECCION'] || '');
@@ -283,6 +371,19 @@ function processProduct(product: Record<string, any>): ProductMeasures {
     ) / 10000;
   }
 
+  // Post-validate electro measures (fix NxNxN, mm→cm, thousands separator)
+  const familia = String(product.original?.['FAMILIA'] || product['FAMILIA'] || '');
+  const electroFixes = postValidateElectroMeasures(finalMeasures, familia);
+  if (electroFixes.length > 0) {
+    warnings.push(...electroFixes);
+    // Lower confidence for fixed measures
+    if (electroFixes.includes('fix1_nxnxn_nulled')) {
+      confidence = 0.1;
+    } else {
+      confidence = Math.min(confidence, 0.7);
+    }
+  }
+
   return {
     'COD.ARTICULO': cod,
     measures: finalMeasures,
@@ -329,6 +430,16 @@ export async function executeStage3(jobId: string): Promise<void> {
       sourceCounts[p.source] = (sourceCounts[p.source] || 0) + 1;
     }
 
+    // Count electro validation fixes applied
+    const fixCounts = { fix1_nxnxn: 0, fix2_mm_to_cm: 0, fix3_thousands: 0 };
+    for (const p of normalized) {
+      for (const w of p.warnings) {
+        if (w === 'fix1_nxnxn_nulled') fixCounts.fix1_nxnxn++;
+        if (w.startsWith('fix2_mm_to_cm')) fixCounts.fix2_mm_to_cm++;
+        if (w === 'fix3_thousands_separator') fixCounts.fix3_thousands++;
+      }
+    }
+
     const summary = {
       total: normalized.length,
       with_any_measures: withMeasures.length,
@@ -339,6 +450,7 @@ export async function executeStage3(jobId: string): Promise<void> {
       avg_confidence: Math.round(
         normalized.reduce((s, p) => s + p.parse_confidence, 0) / normalized.length * 100
       ) / 100,
+      electro_fixes: fixCounts,
     };
 
     const output = { summary, products: normalized };
