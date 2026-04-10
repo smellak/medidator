@@ -247,6 +247,7 @@ router.post('/:jobId/run', async (req: Request, res: Response) => {
 router.get('/:jobId/export', (req: Request, res: Response) => {
   const { jobId } = req.params;
   const format = (req.query.format as string) || 'json';
+  const type = (req.query.type as string) || '';
   const job = store.getJob(jobId);
   if (!job) {
     res.status(404).json({ error: 'Job not found' });
@@ -254,6 +255,70 @@ router.get('/:jobId/export', (req: Request, res: Response) => {
   }
 
   const DATA_DIR = path.resolve(process.cwd(), 'data');
+
+  // Logistics export: 3-column CSV (COD_ARTICULO, DESCRIPCION, VOLUMEN_PAQUETE_M3)
+  if (format === 'csv' && type === 'logistics') {
+    const stage8File = path.join(DATA_DIR, jobId, 'stage8_logistics.json');
+    if (!fs.existsSync(stage8File)) {
+      res.status(400).json({ error: 'Stage 8 (logística) no ejecutado. Ejecuta el pipeline completo primero.' });
+      return;
+    }
+
+    const stage8Data = JSON.parse(fs.readFileSync(stage8File, 'utf-8'));
+    const logisticsProducts: any[] = stage8Data.products || [];
+
+    // Build descriptions map from stage4 or stage1
+    const descMap: Record<string, string> = {};
+    const stage4File = path.join(DATA_DIR, jobId, 'stage4_enriched.json');
+    const stage1File = path.join(DATA_DIR, jobId, 'stage1_base.json');
+    if (fs.existsSync(stage4File)) {
+      const stage4Data = JSON.parse(fs.readFileSync(stage4File, 'utf-8'));
+      for (const p of stage4Data.products || []) {
+        const cod = String(p['COD.ARTICULO'] || '');
+        if (cod) descMap[cod] = String(p.original?.['Descripcion del proveedor'] || '');
+      }
+    } else if (fs.existsSync(stage1File)) {
+      const stage1Data = JSON.parse(fs.readFileSync(stage1File, 'utf-8'));
+      const rows = Array.isArray(stage1Data) ? stage1Data : [];
+      for (const r of rows) {
+        const cod = String(r['COD.ARTICULO'] || '');
+        if (cod) descMap[cod] = String(r['Descripcion del proveedor'] || '');
+      }
+    }
+
+    // Filter products with m3_logistico > 0, sort by COD_ARTICULO
+    const sanitize = (s: string) => s.replace(/[\r\n]+/g, ' ').trim();
+    const rows = logisticsProducts
+      .filter(p => p.m3_logistico !== null && p.m3_logistico !== undefined && Number(p.m3_logistico) > 0)
+      .map(p => {
+        const cod = String(p['COD.ARTICULO'] || '');
+        return {
+          COD_ARTICULO: cod,
+          DESCRIPCION: sanitize(descMap[cod] || ''),
+          VOLUMEN_PAQUETE_M3: Number(p.m3_logistico),
+        };
+      })
+      .sort((a, b) => a.COD_ARTICULO.localeCompare(b.COD_ARTICULO));
+
+    const headers = ['COD_ARTICULO', 'DESCRIPCION', 'VOLUMEN_PAQUETE_M3'];
+    const csvLines = [headers.join(',')];
+    for (const row of rows) {
+      const values = headers.map(h => {
+        const val = (row as any)[h];
+        if (val === null || val === undefined) return '';
+        const str = String(val);
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      });
+      csvLines.push(values.join(','));
+    }
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=job_${jobId}_logistics.csv`);
+    res.send(csvLines.join('\n'));
+    return;
+  }
 
   // For CSV export, prefer files with product arrays
   // For JSON export, prefer the latest stage output
