@@ -323,6 +323,10 @@ router.get('/:jobId/export', (req: Request, res: Response) => {
         const val = (row as any)[h];
         if (val === null || val === undefined) return '';
         const str = String(val);
+        // Force Excel to treat COD_ARTICULO as text (preserves leading zeros)
+        if (h === 'COD_ARTICULO') {
+          return `="${str.replace(/"/g, '""')}"`;
+        }
         if (str.includes(',') || str.includes('"') || str.includes('\n')) {
           return `"${str.replace(/"/g, '""')}"`;
         }
