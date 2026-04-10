@@ -78,7 +78,10 @@ validate_200.js         # Validation script: 200-product coherence check via Gem
 | POST | `/jobs/:id/stage7` | Run stage 7 only |
 | POST | `/jobs/:id/stage8` | Run stage 8 only (logistics volume, Gemini for electro packaging) |
 | POST | `/jobs/:id/run` | Run full 8-stage pipeline (skips already-completed stages) |
-| GET | `/jobs/:id/export?format=csv\|json` | Export job results |
+| GET | `/jobs/:id/export?format=csv\|json` | Export job results (legacy: full product dump) |
+| GET | `/jobs/:id/export?format=csv&type=logistics` | 5-col logistics CSV (COD,DESC,VOL,CONFIDENCE,CAPA), `COD_ARTICULO` as `="..."` text |
+| GET | `/jobs/:id/export/custom?columns=...&format=csv\|xlsx` | Configurable export with column selector + filters |
+| GET | `/jobs/:id/export/columns` | List of available columns and groups for custom export |
 | POST | `/api/agent` | CHS Platform agent endpoint (7 capabilities) |
 
 ## Pipeline Stages (all implemented)
@@ -90,12 +93,17 @@ validate_200.js         # Validation script: 200-product coherence check via Gem
 5. **stage5_outliers_clean** — 7 outlier rules (dim > 500cm, dim > 300cm, dim < 5cm for mueble, peso > 500kg, densidad alta/baja, M3 incoherente); **peso unit fix** (electro >300kg ÷10, any >5000kg ÷1000); ERROR → excluded, WARNING → flagged
 6. **stage6_filter_sets** — 8 grouping sets: by_family, by_linea, by_marca, by_type, by_completeness, with_measures, composites, missing_measures
 7. **stage7_stats** — Coverage stats, dimension distributions with histograms, per-type analysis, quality metrics, composite stats
-8. **stage8_logistics** — Logistics volume estimation with 4-layer cascade:
+8. **stage8_logistics** — Logistics volume estimation with 4-layer cascade + post-validation:
    - **Layer 1 (ERP ground truth)**: M3 field from ERP (matches agency invoices at 99.8%), confidence 0.99
    - **Layer 2 (Gemini packaging)**: Query Gemini for packaging/embalaje dimensions by EAN (electros only), cache at `data/ean_packaging_cache.json`, confidence 0.80
    - **Layer 3 (Ratio estimation)**: vol_logístico = vol_producto × calibration ratio by subfamilia, confidence 0.30-0.65
    - **Layer 4 (Heuristic average)**: Average vol_logístico from same subfamily/type, confidence 0.15-0.20
+   - **Post-validation fixes** (after the 4 layers):
+     - **Fix 1 — exterior plegable**: PARASOL/PERGOLA/CENADOR/GAZEBO/CARPA/TOLDO with vol > 5 m³ → factor 0.05 (se doblan para transporte), confidence 0.25 (~7 productos)
+     - **Fix 2 — electros >3 m³**: look up `ean_packaging_cache.json` for reliable Gemini data; else nullify (estimation_layer='none', confidence=0)
+     - **Fix 3 — muebles tiny**: COMODA/MESA/ARMARIO/etc. with vol < 0.01 m³ → replace with `promedio_subfamilia_corregido` (subfamily average excluding values < 0.01), confidence 0.15 (~468 productos)
    - Sets job.status = 'completed' (stage8 is the completion gate)
+   - Coverage on real dataset: 100% (14,320/14,324), total ~5,468 m³
 
 ## Environment Variables
 
@@ -143,7 +151,7 @@ GEMINI_API_KEY=... node validate_200.js
 - **Coolify app UUID**: `wk8sggsg4koowwccssww4c4s`
 - **Domain**: `medidas.centrohogarsanchez.es`
 - **Docker**: Multi-stage build (deps → builder → runner), Node 20 Alpine
-- **Current container**: `wk8sggsg4koowwccssww4c4s-172243784328`
+- **Current container**: `wk8sggsg4koowwccssww4c4s-143150211251`
 
 ### Traefik ForwardAuth
 
@@ -185,6 +193,30 @@ sudo sed -i "s/wk8sggsg4koowwccssww4c4s-OLD/wk8sggsg4koowwccssww4c4s-NEW/g" \
 sudo docker exec chs-db psql -U chs -d chs -c \
   "UPDATE app_instances SET internal_url = 'http://wk8sggsg4koowwccssww4c4s-NEW:3000' WHERE internal_url LIKE '%wk8sggsg4koowwccssww4c4s%';"
 ```
+
+## Custom Export (column selector)
+
+Configurable export endpoint that lets the user pick exactly which columns and filters they want.
+
+- **Backend**: `GET /jobs/:jobId/export/custom?columns=...&format=csv|xlsx`
+  - `columns` — comma-separated list of column IDs (default: `COD_ARTICULO,DESCRIPCION,VOLUMEN_PAQUETE_M3`)
+  - `format` — `csv` (default) or `xlsx`
+  - Filters (optional): `capa=1,2`, `confidence_min=0.8`, `tipo=mueble|electrodomestico|accesorio|otro`
+  - CSV: `COD_ARTICULO` wrapped in `="..."` (Excel formula format) to preserve leading zeros
+  - XLSX: `COD_ARTICULO` cells written as `{ t: 's', v: ..., z: '@' }` (text type) so leading zeros survive
+  - Auto column widths in xlsx
+- **Listing endpoint**: `GET /jobs/:jobId/export/columns` returns the catalog (columns, default, groups)
+- **26 columns in 4 groups** (defined in `COLUMN_CATALOG` in `src/routes/jobs.ts`):
+  - **Datos básicos** (9): COD_ARTICULO (always), DESCRIPCION, FAMILIA, TIPO, EAN, PROVEEDOR, PROGRAMA, MARCA, LINEA
+  - **Medidas de producto** (6): ANCHO_CM, ALTO_CM, PROFUNDIDAD_CM, VOLUMEN_PRODUCTO_M3, PESO_NETO_KG, PESO_BRUTO_KG
+  - **Logística** (5): VOLUMEN_PAQUETE_M3, BULTOS, CAPA, CONFIDENCE, ESTIMATION_SOURCE
+  - **Calidad** (6): PARSE_CONFIDENCE, SOURCE, COMPOSITE, NUM_COMPONENTS, OUTLIER_WARNING, CATEGORY
+- **Frontend**: `client/components/ExportDialog.tsx` — modal launched from `JobDetail` ("Exportar personalizado" button, only visible when stage 8 is success)
+  - Checkboxes per column group, COD_ARTICULO always selected/disabled
+  - 4 presets: `basic` (3 cols), `full` (logística completa), `measures` (medidas producto), `all` (todas)
+  - Filters: capa dropdown, confidence slider (0-1, step 0.05), tipo dropdown
+  - CSV/XLSX format selector with icons
+  - Live URL preview in footer
 
 ## Caches & Static Data
 
