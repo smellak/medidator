@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Play, Zap, Download, FileJson, Loader } from 'lucide-react';
+import { Play, Zap, Download, FileJson, Loader, Settings2 } from 'lucide-react';
 import type { Job } from '../types';
 import { STAGE_NAMES, STAGE_LABELS } from '../types';
 import { fetchJob, runStage1, runPipeline, getExportUrl } from '../api';
 import StageTimeline from './StageTimeline';
+import ExportDialog from './ExportDialog';
 
 interface Props {
   jobId: string;
@@ -58,6 +59,7 @@ export default function JobDetail({ jobId, onBack, onJobUpdated }: Props) {
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showExportDialog, setShowExportDialog] = useState(false);
 
   const loadJob = useCallback(async () => {
     try {
@@ -220,10 +222,27 @@ export default function JobDetail({ jobId, onBack, onJobUpdated }: Props) {
                 <FileJson className="w-4 h-4" />
                 JSON
               </a>
+              {job.stages.stage8_logistics?.status === 'success' && (
+                <button
+                  onClick={() => setShowExportDialog(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white transition-colors"
+                  style={{
+                    fontFamily: 'var(--font-inter)',
+                    background: 'linear-gradient(135deg, #0891B2, #0e7490)',
+                  }}
+                >
+                  <Settings2 className="w-4 h-4" />
+                  Exportar personalizado
+                </button>
+              )}
             </>
           )}
         </div>
       </div>
+
+      {showExportDialog && (
+        <ExportDialog jobId={job.id} onClose={() => setShowExportDialog(false)} />
+      )}
 
       {/* Stage Progress */}
       <div className="bg-surface-card border border-border rounded-lg shadow-sm p-6">
