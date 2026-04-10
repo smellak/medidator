@@ -13,7 +13,7 @@ const BATCH_SIZE = 5;
 const BATCH_DELAY_MS = 1000;
 const SAVE_EVERY = 50;
 
-type EstimationLayer = 'erp_ground_truth' | 'gemini_embalaje' | 'ratio_subfamilia' | 'ratio_tipo' | 'promedio_subfamilia' | 'promedio_tipo' | 'none';
+type EstimationLayer = 'erp_ground_truth' | 'gemini_embalaje' | 'ratio_subfamilia' | 'ratio_tipo' | 'promedio_subfamilia' | 'promedio_tipo' | 'promedio_subfamilia_corregido' | 'none';
 
 interface LogisticsEntry {
   'COD.ARTICULO': string;
@@ -190,6 +190,7 @@ export async function executeStage8(jobId: string): Promise<void> {
       ratio_tipo: 0,
       promedio_subfamilia: 0,
       promedio_tipo: 0,
+      promedio_subfamilia_corregido: 0,
       none: 0,
     };
     const layerConfidences: Record<string, number[]> = {
@@ -521,10 +522,141 @@ export async function executeStage8(jobId: string): Promise<void> {
     console.log(`[Stage8] Layer 4 done: ${layerCounts.promedio_subfamilia} promedio_subfamilia + ${layerCounts.promedio_tipo} promedio_tipo`);
 
     // ==========================================
+    // POST-VALIDATION PHASE
+    // Fix 1: Exterior products (parasol/pergola/...) > 5 m³ → factor 0.05
+    // Fix 2: Electros > 3 m³ → use packaging cache or nullify
+    // Fix 3: Muebles (comoda/mesa/...) < 0.01 m³ → subfamily average (excluding < 0.01)
+    // ==========================================
+    console.log('[Stage8] Post-validation phase...');
+
+    const postValidationStats = {
+      fix1_exterior_plegable: 0,
+      fix2_electro_excessive_nulled: 0,
+      fix2_electro_excessive_from_cache: 0,
+      fix3_mueble_tiny_corrected: 0,
+      fix3_mueble_tiny_no_avg: 0,
+    };
+
+    const EXTERIOR_REGEX = /\b(PARASOL|PERGOLA|PÉRGOLA|CENADOR|GAZEBO|CARPA|TOLDO)\b/i;
+    const MUEBLE_TARGET_REGEX = /\b(COMODA|CÓMODA|MESA|MESITA|SINFONIER|ARMARIO|ESTANTERIA|ESTANTERÍA|VITRINA|APARADOR|CAMA|SOFA|SOFÁ)\b/i;
+
+    // ---- Fix 1: exterior plegable ----
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      if (e.m3_logistico === null || e.m3_logistico <= 5) continue;
+      const desc = productMeta[i].desc || '';
+      if (!EXTERIOR_REGEX.test(desc)) continue;
+
+      const original = e.m3_logistico;
+      const corrected = Math.round(original * 0.05 * 10000) / 10000;
+      e.m3_logistico = corrected;
+      e.confidence = 0.25;
+      e.detail = `Producto exterior plegable: vol_original=${original} × 0.05 = ${corrected} m³ (fix1)`;
+      postValidationStats.fix1_exterior_plegable++;
+    }
+
+    // ---- Fix 2: electros con volumen > 3 m³ ----
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      if (e.m3_logistico === null || e.m3_logistico <= 3) continue;
+      const pm = productMeta[i];
+      if (pm.tipo !== 'electrodomestico') continue;
+
+      // Try packaging cache first
+      let fromCache = false;
+      if (isValidEan(pm.ean)) {
+        const eanStr = String(pm.ean).trim();
+        const cached = packagingCache[eanStr];
+        if (cached && cached.encontrado && cached.embalaje_ancho_cm && cached.embalaje_alto_cm && cached.embalaje_profundidad_cm) {
+          const vol = Math.round(
+            cached.embalaje_ancho_cm * cached.embalaje_alto_cm * cached.embalaje_profundidad_cm / 1000000 * 10000
+          ) / 10000;
+          if (vol > 0 && vol <= 3) {
+            // Decrement old layer counter if needed
+            const oldLayer = e.estimation_layer;
+            if (oldLayer !== 'gemini_embalaje') {
+              const oldKey = oldLayer as keyof typeof layerCounts;
+              if (layerCounts[oldKey] !== undefined && layerCounts[oldKey] > 0) layerCounts[oldKey]--;
+              layerCounts.gemini_embalaje++;
+            }
+            e.m3_logistico = vol;
+            e.estimation_layer = 'gemini_embalaje';
+            e.confidence = 0.80;
+            e.peso_bruto_kg = cached.embalaje_peso_bruto_kg || e.peso_bruto_kg;
+            e.detail = `Fix2 electro>3m³: Gemini embalaje ${cached.embalaje_ancho_cm}×${cached.embalaje_alto_cm}×${cached.embalaje_profundidad_cm} cm = ${vol} m³`;
+            postValidationStats.fix2_electro_excessive_from_cache++;
+            fromCache = true;
+          }
+        }
+      }
+
+      if (!fromCache) {
+        // Decrement old layer counter
+        const oldLayer = e.estimation_layer;
+        const oldKey = oldLayer as keyof typeof layerCounts;
+        if (layerCounts[oldKey] !== undefined && layerCounts[oldKey] > 0) layerCounts[oldKey]--;
+        layerCounts.none++;
+
+        e.m3_logistico = null;
+        e.estimation_layer = 'none';
+        e.confidence = 0;
+        e.ratio_used = null;
+        e.ratio_source = null;
+        e.detail = `Fix2 electro>3m³: volumen inverosímil, sin dato fiable`;
+        postValidationStats.fix2_electro_excessive_nulled++;
+      }
+    }
+
+    // ---- Fix 3: muebles con volumen < 0.01 m³ ----
+    // Build subfamily averages EXCLUDING values < 0.01
+    const volBySubfL2Clean: Record<string, number[]> = {};
+    for (let i = 0; i < entries.length; i++) {
+      const v = entries[i].m3_logistico;
+      if (v === null || v < 0.01) continue;
+      const subfL2 = productMeta[i].subfL2;
+      if (!volBySubfL2Clean[subfL2]) volBySubfL2Clean[subfL2] = [];
+      volBySubfL2Clean[subfL2].push(v);
+    }
+
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      if (e.m3_logistico === null || e.m3_logistico >= 0.01) continue;
+      const pm = productMeta[i];
+      if (pm.tipo !== 'mueble') continue;
+      const desc = pm.desc || '';
+      if (!MUEBLE_TARGET_REGEX.test(desc)) continue;
+
+      const cleanVols = volBySubfL2Clean[pm.subfL2];
+      if (cleanVols && cleanVols.length >= 3) {
+        const avg = Math.round(cleanVols.reduce((s, v) => s + v, 0) / cleanVols.length * 10000) / 10000;
+        const original = e.m3_logistico;
+
+        // Decrement old layer counter
+        const oldLayer = e.estimation_layer;
+        const oldKey = oldLayer as keyof typeof layerCounts;
+        if (layerCounts[oldKey] !== undefined && layerCounts[oldKey] > 0) layerCounts[oldKey]--;
+        layerCounts.promedio_subfamilia_corregido =
+          (layerCounts.promedio_subfamilia_corregido || 0) + 1;
+
+        e.m3_logistico = avg;
+        e.estimation_layer = 'promedio_subfamilia_corregido';
+        e.confidence = 0.15;
+        e.ratio_source = `promedio_subfamilia_corregido:${pm.subfL2}`;
+        e.detail = `Fix3 mueble<0.01m³ (${original}): promedio subfamilia limpia ${pm.subfL2} (n=${cleanVols.length}) = ${avg} m³`;
+        postValidationStats.fix3_mueble_tiny_corrected++;
+      } else {
+        postValidationStats.fix3_mueble_tiny_no_avg++;
+      }
+    }
+
+    console.log(`[Stage8] Post-validation done: fix1=${postValidationStats.fix1_exterior_plegable}, fix2_nulled=${postValidationStats.fix2_electro_excessive_nulled}, fix2_cache=${postValidationStats.fix2_electro_excessive_from_cache}, fix3=${postValidationStats.fix3_mueble_tiny_corrected}`);
+
+    // ==========================================
     // Summary
     // ==========================================
-    const totalWithEstimate = entries.filter(e => e.m3_logistico !== null && e.m3_logistico > 0).length;
-    const m3Values = entries.filter(e => e.m3_logistico !== null && e.m3_logistico > 0).map(e => e.m3_logistico!);
+    const totalWithEstimate = entries.filter(e => e.m3_logistico !== null && e.m3_logistico > 0 && e.confidence > 0).length;
+    const sinDatoCount = entries.length - totalWithEstimate;
+    const m3Values = entries.filter(e => e.m3_logistico !== null && e.m3_logistico > 0 && e.confidence > 0).map(e => e.m3_logistico!);
     const totalM3 = m3Values.length > 0 ? Math.round(m3Values.reduce((s, v) => s + v, 0) * 100) / 100 : 0;
 
     const avgConf = (arr: number[]) => arr.length > 0 ? Math.round(arr.reduce((s, v) => s + v, 0) / arr.length * 100) / 100 : 0;
@@ -534,7 +666,7 @@ export async function executeStage8(jobId: string): Promise<void> {
       clean_products: products.length,
       excluded_products: excluded.length,
       con_estimacion: totalWithEstimate,
-      sin_dato: layerCounts.none,
+      sin_dato: sinDatoCount,
       coverage_pct: Math.round(totalWithEstimate / products.length * 1000) / 10,
       por_capa: {
         capa1_real: {
@@ -567,6 +699,11 @@ export async function executeStage8(jobId: string): Promise<void> {
           pct: Math.round(layerCounts.promedio_tipo / products.length * 1000) / 10,
           avg_confidence: avgConf(layerConfidences.promedio_tipo),
         },
+        capa4_promedio_subfamilia_corregido: {
+          count: layerCounts.promedio_subfamilia_corregido,
+          pct: Math.round(layerCounts.promedio_subfamilia_corregido / products.length * 1000) / 10,
+          avg_confidence: 0.15,
+        },
         sin_dato: {
           count: layerCounts.none,
           pct: Math.round(layerCounts.none / products.length * 1000) / 10,
@@ -574,8 +711,9 @@ export async function executeStage8(jobId: string): Promise<void> {
       },
       vol_total_m3: totalM3,
       gemini_stats: geminiStats,
+      post_validation: postValidationStats,
       phase: 1,
-      active_layers: ['erp_ground_truth', 'gemini_embalaje', 'ratio_subfamilia', 'ratio_tipo', 'promedio_subfamilia', 'promedio_tipo'],
+      active_layers: ['erp_ground_truth', 'gemini_embalaje', 'ratio_subfamilia', 'ratio_tipo', 'promedio_subfamilia', 'promedio_tipo', 'promedio_subfamilia_corregido'],
     };
 
     const output = { summary, products: entries };

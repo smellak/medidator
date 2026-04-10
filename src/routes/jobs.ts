@@ -286,21 +286,37 @@ router.get('/:jobId/export', (req: Request, res: Response) => {
       }
     }
 
-    // Filter products with m3_logistico > 0, sort by COD_ARTICULO
+    // Map estimation_layer to capa number
+    const layerToCapa = (layer: string): number => {
+      if (layer === 'erp_ground_truth') return 1;
+      if (layer === 'gemini_embalaje') return 2;
+      if (layer === 'ratio_subfamilia' || layer === 'ratio_tipo') return 3;
+      if (layer === 'promedio_subfamilia' || layer === 'promedio_tipo' || layer === 'promedio_subfamilia_corregido') return 4;
+      return 0;
+    };
+
+    // Filter products with m3_logistico > 0 AND confidence > 0, sort by COD_ARTICULO
     const sanitize = (s: string) => s.replace(/[\r\n]+/g, ' ').trim();
     const rows = logisticsProducts
-      .filter(p => p.m3_logistico !== null && p.m3_logistico !== undefined && Number(p.m3_logistico) > 0)
+      .filter(p =>
+        p.m3_logistico !== null &&
+        p.m3_logistico !== undefined &&
+        Number(p.m3_logistico) > 0 &&
+        Number(p.confidence) > 0
+      )
       .map(p => {
         const cod = String(p['COD.ARTICULO'] || '');
         return {
           COD_ARTICULO: cod,
           DESCRIPCION: sanitize(descMap[cod] || ''),
           VOLUMEN_PAQUETE_M3: Number(p.m3_logistico),
+          CONFIDENCE: Number(p.confidence),
+          CAPA: layerToCapa(String(p.estimation_layer || '')),
         };
       })
       .sort((a, b) => a.COD_ARTICULO.localeCompare(b.COD_ARTICULO));
 
-    const headers = ['COD_ARTICULO', 'DESCRIPCION', 'VOLUMEN_PAQUETE_M3'];
+    const headers = ['COD_ARTICULO', 'DESCRIPCION', 'VOLUMEN_PAQUETE_M3', 'CONFIDENCE', 'CAPA'];
     const csvLines = [headers.join(',')];
     for (const row of rows) {
       const values = headers.map(h => {
