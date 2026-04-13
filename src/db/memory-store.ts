@@ -155,6 +155,16 @@ class MemoryStore {
   getJobsByStatus(status: Job['status']): Job[] {
     return this.getAllJobs().filter(j => j.status === status);
   }
+
+  /**
+   * Re-scan data/ directory and load any new jobs not yet in memory.
+   * Returns the number of newly discovered jobs.
+   */
+  reloadFromDisk(): number {
+    const before = this.jobs.size;
+    this.loadExistingJobs();
+    return this.jobs.size - before;
+  }
 }
 
 export const store = new MemoryStore();

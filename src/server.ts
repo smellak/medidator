@@ -3,6 +3,7 @@ import cors from 'cors';
 import path from 'path';
 import { jobsRouter } from './routes/jobs';
 import { agentRouter } from './routes/agent';
+import { store } from './db/memory-store';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
@@ -21,6 +22,17 @@ app.get('/health', (req, res) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
+  });
+});
+
+// Admin: reload jobs from disk (POST /api/admin/reload)
+// Useful after docker cp of new job data — no container restart needed
+app.post('/api/admin/reload', (req, res) => {
+  const newJobs = store.reloadFromDisk();
+  res.json({
+    ok: true,
+    new_jobs: newJobs,
+    total_jobs: store.getJobCount(),
   });
 });
 
