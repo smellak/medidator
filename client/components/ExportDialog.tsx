@@ -90,6 +90,8 @@ export default function ExportDialog({ jobId, onClose }: Props) {
   const [capaFilter, setCapaFilter] = useState<string>(''); // '' | '1' | '2' | '3' | '4' | '1,2'
   const [confMin, setConfMin] = useState<number>(0);
   const [tipoFilter, setTipoFilter] = useState<Tipo>('');
+  const [downloading, setDownloading] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const toggleColumn = (id: string) => {
     if (id === 'COD_ARTICULO') return; // always selected
@@ -118,15 +120,38 @@ export default function ExportDialog({ jobId, onClose }: Props) {
     return `/jobs/${jobId}/export/custom?${qs.toString()}`;
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     const url = buildUrl();
-    // Trigger download
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = '';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    setDownloading(true);
+    setExportError(null);
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        let msg = `Error ${resp.status}`;
+        try {
+          const err = await resp.json();
+          msg = err.error || msg;
+        } catch { /* ignore */ }
+        setExportError(msg);
+        return;
+      }
+      const blob = await resp.blob();
+      const filename = format === 'xlsx'
+        ? `medidator_${jobId}_custom.xlsx`
+        : `medidator_${jobId}_custom.csv`;
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch (e: any) {
+      setExportError(e.message || 'Error de red al exportar');
+    } finally {
+      setDownloading(false);
+    }
   };
 
   const totalSelected = selected.size;
@@ -305,29 +330,36 @@ export default function ExportDialog({ jobId, onClose }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-surface">
-          <p className="text-xs text-text-secondary font-mono truncate max-w-md" title={buildUrl()}>
-            {buildUrl()}
-          </p>
-          <div className="flex gap-2">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-text-primary bg-surface-card border border-border rounded-md hover:bg-gray-50 transition-colors"
-              style={{ fontFamily: 'var(--font-inter)' }}
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleDownload}
-              disabled={totalSelected === 0}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{
-                fontFamily: 'var(--font-inter)',
-                background: 'linear-gradient(135deg, #0891B2, #0e7490)',
-              }}
-            >
-              <Download className="w-4 h-4" /> Descargar
-            </button>
+        <div className="border-t border-border bg-surface">
+          {exportError && (
+            <div className="px-6 py-2 text-xs text-red-700 bg-red-50 border-b border-red-200">
+              ⚠ {exportError}
+            </div>
+          )}
+          <div className="flex items-center justify-between px-6 py-4">
+            <p className="text-xs text-text-secondary font-mono truncate max-w-md" title={buildUrl()}>
+              {buildUrl()}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 text-sm font-medium text-text-primary bg-surface-card border border-border rounded-md hover:bg-gray-50 transition-colors"
+                style={{ fontFamily: 'var(--font-inter)' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDownload}
+                disabled={totalSelected === 0 || downloading}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{
+                  fontFamily: 'var(--font-inter)',
+                  background: 'linear-gradient(135deg, #0891B2, #0e7490)',
+                }}
+              >
+                <Download className="w-4 h-4" /> {downloading ? 'Descargando…' : 'Descargar'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
