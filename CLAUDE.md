@@ -151,7 +151,7 @@ GEMINI_API_KEY=... node validate_200.js
 - **Coolify app UUID**: `wk8sggsg4koowwccssww4c4s`
 - **Domain**: `medidas.centrohogarsanchez.es`
 - **Docker**: Multi-stage build (deps → builder → runner), Node 20 Alpine
-- **Current container**: `wk8sggsg4koowwccssww4c4s-101513131940`
+- **Current container**: `wk8sggsg4koowwccssww4c4s-145854745575`
 
 ### Traefik ForwardAuth
 
@@ -160,7 +160,28 @@ Config file: `/data/coolify/proxy/dynamic/chs-v2-medidas-auth.yaml`
 - `/health` and `/assets/*` are public (no auth, priority 200)
 - All other routes go through CHS ForwardAuth SSO (priority 100)
 - The ForwardAuth middleware is defined in `chs-v2-citas-auth.yaml`
-- **After each Coolify redeploy**: update the container name in the YAML service URL
+- **After each Coolify redeploy**: Traefik and DB are auto-updated by Coolify. Data persists via bind mounts (no manual steps needed).
+
+### Data Persistence (ACTIVE since 2026-04-14)
+
+Bind mounts configured in Coolify DB (`local_persistent_volumes` table, resource_id=16):
+```
+/data/medidator/data    → /app/data    (job outputs, EAN caches, ground truth)
+/data/medidator/uploads → /app/uploads (uploaded Excel files)
+```
+- Host dirs owned by uid 1001 (= `medidas` user in container) — read/write works
+- Data survives ALL redeployments automatically
+- Job `1775737734261` (452MB) lives at `/data/medidator/data/1775737734261/`
+- **No docker cp needed after deploys** — data is always there
+
+To add more persistent volumes for a new app:
+```sql
+-- Connect to Coolify DB
+sudo docker exec coolify-db psql -U coolify -d coolify -c "
+INSERT INTO local_persistent_volumes (name, mount_path, host_path, resource_type, resource_id, created_at, updated_at)
+VALUES ('vol-name', '/container/path', '/host/path', 'App\Models\Application', APP_ID, NOW(), NOW());"
+-- Then redeploy the app
+```
 
 ### Deploy workflow
 
@@ -183,40 +204,8 @@ curl -s -X POST "http://localhost:8000/api/v1/applications/wk8sggsg4koowwccssww4
 
 # 5. Wait for new container, verify health
 sudo docker ps --filter "name=wk8sggsg4koowwccssww4c4s" --format "{{.Names}} {{.Status}}"
-sudo docker exec NEW_CONTAINER wget -qO- http://127.0.0.1:3000/health
-
-# 6. Update Traefik YAML with new container name (Coolify usually auto-updates this)
-sudo grep "url:" /data/coolify/proxy/dynamic/chs-v2-medidas-auth.yaml
-# If still pointing to OLD container:
-# sudo sed -i "s/wk8sggsg4koowwccssww4c4s-OLD/wk8sggsg4koowwccssww4c4s-NEW/g" \
-#   /data/coolify/proxy/dynamic/chs-v2-medidas-auth.yaml
-
-# 7. Update DB internal_url
-sudo docker exec chs-db psql -U chs -d chs -c \
-  "UPDATE app_instances SET internal_url = 'http://wk8sggsg4koowwccssww4c4s-NEW:3000' WHERE internal_url LIKE '%wk8sggsg4koowwccssww4c4s%';"
-
-# 8. Restore production job data (452MB — NOT in git, must docker cp after each deploy)
-NEW_CONTAINER=wk8sggsg4koowwccssww4c4s-TIMESTAMP
-sudo docker cp /home/medidator/medidator/data/1775737734261 $NEW_CONTAINER:/app/data/
-sudo docker exec -u root $NEW_CONTAINER chown -R medidas:medidas /app/data/1775737734261
-# Reload store WITHOUT restarting (new endpoint):
-sudo docker exec $NEW_CONTAINER wget -qO- --post-data='' http://127.0.0.1:3000/api/admin/reload
-# → returns { ok: true, new_jobs: 1, total_jobs: N }
-```
-
-### Data Persistence Status
-
-```
-HOST VOLUME (prepared but NOT mounted):
-  /data/medidator/data/   → uid 1001 (medidas), has caches + job 1775737734261
-  /data/medidator/uploads/ → uid 1001 (medidas)
-
-WHY volumes aren't mounted:
-  Coolify has custom_docker_run_options: -v /data/medidator/data:/app/data
-  BUT Coolify deploys via docker compose, not docker run → field is IGNORED.
-  Fix: Use Coolify UI → Application → Storage tab → Add persistent storage (bind mount)
-
-WORKAROUND (current): docker cp + POST /api/admin/reload after each deploy
+# Traefik and DB are auto-updated by Coolify — no manual intervention needed
+# Data is available immediately (bind mounts persist across deploys)
 ```
 
 ## Custom Export (column selector)
