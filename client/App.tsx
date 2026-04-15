@@ -50,6 +50,51 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-surface">
+      {/* CHS Platform home button — fixed, always visible */}
+      <a
+        href="https://platform.centrohogarsanchez.es"
+        title="Volver a CHS Platform"
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '7px',
+          padding: '8px 14px',
+          background: '#fff',
+          border: '1.5px solid #E2E8F0',
+          borderRadius: '10px',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.09)',
+          textDecoration: 'none',
+          fontFamily: "'Outfit', 'Inter', Arial, sans-serif",
+          fontSize: '13px',
+          fontWeight: 600,
+          color: '#1E3A5F',
+          letterSpacing: '0.01em',
+          transition: 'all 0.18s',
+        }}
+        onMouseOver={e => {
+          const el = e.currentTarget;
+          el.style.background = '#EFF6FF';
+          el.style.borderColor = '#2563EB';
+          el.style.boxShadow = '0 4px 14px rgba(37,99,235,0.16)';
+        }}
+        onMouseOut={e => {
+          const el = e.currentTarget;
+          el.style.background = '#fff';
+          el.style.borderColor = '#E2E8F0';
+          el.style.boxShadow = '0 2px 10px rgba(0,0,0,0.09)';
+        }}
+      >
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        CHS
+      </a>
+
       {/* Hero Header */}
       <div className="chs-hero-gradient relative overflow-hidden">
         <div className="dot-pattern absolute inset-0" />
