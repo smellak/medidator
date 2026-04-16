@@ -102,8 +102,9 @@ validate_200.js         # Validation script: 200-product coherence check via Gem
      - **Fix 1 — exterior plegable**: PARASOL/PERGOLA/CENADOR/GAZEBO/CARPA/TOLDO with vol > 5 m³ → factor 0.05 (se doblan para transporte), confidence 0.25 (~7 productos)
      - **Fix 2 — electros >3 m³**: look up `ean_packaging_cache.json` for reliable Gemini data; else nullify (estimation_layer='none', confidence=0)
      - **Fix 3 — muebles tiny**: COMODA/MESA/ARMARIO/etc. with vol < 0.01 m³ → replace with `promedio_subfamilia_corregido` (subfamily average excluding values < 0.01), confidence 0.15 (~468 productos)
+     - **Fix 4 — ERP placeholder 0.01**: muebles with ERP M3=0.01 AND vol_producto > 0.3 m³ → invalidate ERP and recalculate with ratio_subfamilia, estimation_layer='ratio_subfamilia_corregido_fix4', confidence 0.35-0.55 (~7 productos). Excludes colchones/alfombras (legitimately compactable). Moves from capa 1 → capa 3.
    - Sets job.status = 'completed' (stage8 is the completion gate)
-   - Coverage on real dataset: 100% (14,320/14,324), total ~5,468 m³
+   - Coverage on real dataset: 100% (14,320/14,324), total ~5,473 m³
 
 ## Environment Variables
 
@@ -151,7 +152,7 @@ GEMINI_API_KEY=... node validate_200.js
 - **Coolify app UUID**: `wk8sggsg4koowwccssww4c4s`
 - **Domain**: `medidas.centrohogarsanchez.es`
 - **Docker**: Multi-stage build (deps → builder → runner), Node 20 Alpine
-- **Current container**: `wk8sggsg4koowwccssww4c4s-145854745575`
+- **Current container**: `wk8sggsg4koowwccssww4c4s-175731798972`
 
 ### Traefik ForwardAuth
 
