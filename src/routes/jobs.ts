@@ -291,7 +291,7 @@ router.get('/:jobId/export', (req: Request, res: Response) => {
     const layerToCapa = (layer: string): number => {
       if (layer === 'erp_ground_truth') return 1;
       if (layer === 'gemini_embalaje') return 2;
-      if (layer === 'ratio_subfamilia' || layer === 'ratio_tipo') return 3;
+      if (layer === 'ratio_subfamilia' || layer === 'ratio_tipo' || layer === 'ratio_subfamilia_corregido_fix4') return 3;
       if (layer === 'promedio_subfamilia' || layer === 'promedio_tipo' || layer === 'promedio_subfamilia_corregido') return 4;
       return 0;
     };
@@ -471,7 +471,7 @@ const COLUMN_CATALOG: Record<string, ColumnExtractor> = {
     const layer = s8?.estimation_layer;
     if (layer === 'erp_ground_truth') return 1;
     if (layer === 'gemini_embalaje') return 2;
-    if (layer === 'ratio_subfamilia' || layer === 'ratio_tipo') return 3;
+    if (layer === 'ratio_subfamilia' || layer === 'ratio_tipo' || layer === 'ratio_subfamilia_corregido_fix4') return 3;
     if (layer === 'promedio_subfamilia' || layer === 'promedio_tipo' || layer === 'promedio_subfamilia_corregido') return 4;
     return 0;
   },
@@ -575,7 +575,7 @@ router.get('/:jobId/export/custom', (req: Request, res: Response) => {
   const layerToCapa = (layer: string): number => {
     if (layer === 'erp_ground_truth') return 1;
     if (layer === 'gemini_embalaje') return 2;
-    if (layer === 'ratio_subfamilia' || layer === 'ratio_tipo') return 3;
+    if (layer === 'ratio_subfamilia' || layer === 'ratio_tipo' || layer === 'ratio_subfamilia_corregido_fix4') return 3;
     if (layer === 'promedio_subfamilia' || layer === 'promedio_tipo' || layer === 'promedio_subfamilia_corregido') return 4;
     return 0;
   };

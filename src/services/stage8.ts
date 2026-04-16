@@ -13,7 +13,7 @@ const BATCH_SIZE = 5;
 const BATCH_DELAY_MS = 1000;
 const SAVE_EVERY = 50;
 
-type EstimationLayer = 'erp_ground_truth' | 'gemini_embalaje' | 'ratio_subfamilia' | 'ratio_tipo' | 'promedio_subfamilia' | 'promedio_tipo' | 'promedio_subfamilia_corregido' | 'none';
+type EstimationLayer = 'erp_ground_truth' | 'gemini_embalaje' | 'ratio_subfamilia' | 'ratio_tipo' | 'promedio_subfamilia' | 'promedio_tipo' | 'promedio_subfamilia_corregido' | 'ratio_subfamilia_corregido_fix4' | 'none';
 
 interface LogisticsEntry {
   'COD.ARTICULO': string;
@@ -535,6 +535,7 @@ export async function executeStage8(jobId: string): Promise<void> {
       fix2_electro_excessive_from_cache: 0,
       fix3_mueble_tiny_corrected: 0,
       fix3_mueble_tiny_no_avg: 0,
+      fix4_erp_placeholder_corrected: 0,
     };
 
     const EXTERIOR_REGEX = /\b(PARASOL|PERGOLA|PÉRGOLA|CENADOR|GAZEBO|CARPA|TOLDO)\b/i;
@@ -649,7 +650,89 @@ export async function executeStage8(jobId: string): Promise<void> {
       }
     }
 
-    console.log(`[Stage8] Post-validation done: fix1=${postValidationStats.fix1_exterior_plegable}, fix2_nulled=${postValidationStats.fix2_electro_excessive_nulled}, fix2_cache=${postValidationStats.fix2_electro_excessive_from_cache}, fix3=${postValidationStats.fix3_mueble_tiny_corrected}`);
+    // ---- Fix 4: ERP placeholder 0.01 m³ en muebles grandes ----
+    // El ERP usa 0.01 como valor dummy para muchos muebles. Si vol_producto > 0.3 m³
+    // el packaging de 0.01 m³ es físicamente imposible. Se invalida y recalcula con ratio.
+    const ENROLLABLE_REGEX = /\b(COLCHON|COLCH[OÓ]N|ALFOMBRA|FELPUDO|MANTA)\b/i;
+    const fix4_examples: string[] = [];
+
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+
+      // Criterio 1: actualmente asignado por ERP
+      if (e.estimation_layer !== 'erp_ground_truth') continue;
+
+      // Criterio 2: m3_logistico ≈ 0.01 (con tolerancia pequeña)
+      if (e.m3_logistico === null || e.m3_logistico < 0.009 || e.m3_logistico > 0.011) continue;
+
+      const pm = productMeta[i];
+
+      // Criterio 3: vol_producto > 0.3 m³ (mueble grande ensamblado)
+      if (!pm.volProducto || pm.volProducto < 0.3) continue;
+
+      // Criterio 4: excluir productos legítimamente compactables (colchones, alfombras)
+      if (ENROLLABLE_REGEX.test(pm.desc)) continue;
+
+      // Buscar ratio por subfamilia L2 → L1 → tipo
+      let fix4Ratio: RatioGroup | null = null;
+      let fix4Source = '';
+      let fix4Conf = 0;
+
+      const l2 = ratios.by_subfamilia_l2?.[pm.subfL2] as RatioGroup | undefined;
+      if (l2 && l2.n >= 5) {
+        fix4Ratio = l2;
+        fix4Source = `fix4_erp_placeholder:${pm.subfL2}`;
+        fix4Conf = l2.n >= 20 ? 0.55 : l2.n >= 10 ? 0.45 : 0.35;
+      }
+
+      if (!fix4Ratio) {
+        const l1 = ratios.by_subfamilia_l1?.[pm.subfL1] as RatioGroup | undefined;
+        if (l1 && l1.n >= 5) {
+          fix4Ratio = l1;
+          fix4Source = `fix4_erp_placeholder:subfamilia_l1:${pm.subfL1}`;
+          fix4Conf = 0.35;
+        }
+      }
+
+      if (!fix4Ratio) {
+        const t = ratios.by_tipo?.[pm.tipo] as RatioGroup | undefined;
+        if (t && t.n >= 5) {
+          fix4Ratio = t;
+          fix4Source = `fix4_erp_placeholder:tipo:${pm.tipo}`;
+          fix4Conf = 0.30;
+        }
+      }
+
+      if (fix4Ratio) {
+        const nuevoVol = Math.round(pm.volProducto * fix4Ratio.median * 10000) / 10000;
+        const volOriginal = e.m3_logistico;
+
+        // Ajustar contadores: quitar de ERP, añadir a ratio_subfamilia
+        if (layerCounts.erp_ground_truth > 0) layerCounts.erp_ground_truth--;
+        layerCounts.ratio_subfamilia++;
+        layerConfidences.ratio_subfamilia.push(fix4Conf);
+
+        e.m3_logistico = nuevoVol;
+        e.estimation_layer = 'ratio_subfamilia_corregido_fix4';
+        e.confidence = fix4Conf;
+        e.ratio_used = fix4Ratio.median;
+        e.ratio_source = fix4Source;
+        e.detail = `Fix4 ERP=${volOriginal} placeholder (vol_prod=${pm.volProducto}): ratio ${fix4Ratio.median} → ${nuevoVol} m³`;
+
+        postValidationStats.fix4_erp_placeholder_corrected++;
+        if (fix4_examples.length < 10) {
+          fix4_examples.push(`${pm.cod}: ${volOriginal}→${nuevoVol}m³ | ${pm.desc.substring(0, 50)}`);
+        }
+      }
+    }
+
+    console.log(`[Stage8] Fix4 applied: ${postValidationStats.fix4_erp_placeholder_corrected} ERP placeholders corrected`);
+    if (fix4_examples.length > 0) {
+      console.log('[Stage8] Fix4 examples:');
+      fix4_examples.forEach(ex => console.log(`  ${ex}`));
+    }
+
+    console.log(`[Stage8] Post-validation done: fix1=${postValidationStats.fix1_exterior_plegable}, fix2_nulled=${postValidationStats.fix2_electro_excessive_nulled}, fix2_cache=${postValidationStats.fix2_electro_excessive_from_cache}, fix3=${postValidationStats.fix3_mueble_tiny_corrected}, fix4=${postValidationStats.fix4_erp_placeholder_corrected}`);
 
     // ==========================================
     // Summary
