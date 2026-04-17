@@ -104,8 +104,9 @@ validate_200.js         # Validation script: 200-product coherence check via Gem
      - **Fix 3 — muebles tiny**: COMODA/MESA/ARMARIO/etc. with vol < 0.01 m³ → replace with `promedio_subfamilia_corregido` (subfamily average excluding values < 0.01), confidence 0.15 (~468 productos)
      - **Fix 4 — ERP placeholder 0.01**: muebles with ERP M3=0.01 AND vol_producto > 0.3 m³ → invalidate ERP and recalculate with ratio_subfamilia, estimation_layer='ratio_subfamilia_corregido_fix4', confidence 0.35-0.55 (~7 productos). Excludes colchones/alfombras (legitimately compactable). Moves from capa 1 → capa 3.
      - **Fix 5 — supplier 00860 dims from description**: supplier 00860 (MB- decor/furniture) with m3_logístico < 0.01 → extract NxNxN from product description (DIM_REGEX, regex acepta decimales con coma: "145,5X40,5X60"), compute vol, apply ratio_subfamilia. estimation_layer='ratio_desde_descripcion_fix5', confidence 0.45 (~298 productos). Excludes CUADRO/ESPEJO/LAMINA/DECORACION/etc. (legitimately flat/decorative). Moves from capa 4 → capa 3.
+     - **Fix 7 — large electros/muebles residuales con tiny volume**: FRIGO/LAVADORA/TERMO/HORNO/etc. con vol < 0.05 m³, o RECIBIDOR/ESCRITORIO/LITERA/BICAMA/CABEZAL/etc. con vol < 0.01 m³ → Nivel A: parsear NxNxN desc (acepta "200/190X90"), Nivel B: usar vol_producto stage4 si > 0.05 m³. estimation_layer='ratio_residual_fix7', confidence 0.45-0.50 (~7 productos). Capa 3.
    - Sets job.status = 'completed' (stage8 is the completion gate)
-   - Coverage on real dataset: 100% (14,323/14,324), total 5,562.88 m³
+   - Coverage on real dataset: 100% (14,323/14,324), total 5,563.88 m³
 
 ## Environment Variables
 
