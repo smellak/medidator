@@ -829,8 +829,9 @@ export async function executeStage8(jobId: string): Promise<void> {
     const ELECTRO_GRANDE_REGEX = /\b(FRIGO|FRIGOR[IÍ]FICO|LAVADORA|LAVAVAJILLAS|LAVASECADORA|SECADORA|CONGELADOR|HORNO\s|TERMO|CALENTADOR)\b/i;
     const MUEBLE_GRANDE_REGEX = /\b(RECIBIDOR|ESCRITORIO|LITERA|BICAMA|CABEZAL|CABECERO|COMPOSICI[OÓ]N|APILABLE|VESTIDOR|MUEBLE\s+TV)\b/i;
     const EXCLUDE_FIX7_REGEX = /\b(MINI|PEQUE[NÑ]O|PORT[AÁ]TIL|VIAJE|INFANTIL|MU[NÑ]ECA)\b/i;
-    // Acepta "200/190X90X135" tomando el primer número, más decimales con coma
-    const DIM_REGEX_FIX7 = /\b(\d{2,3})(?:\/\d{2,3})?(?:,\d{1,2})?[xX×](\d{1,3})(?:\/\d{1,3})?(?:,\d{1,2})?[xX×](\d{2,3})(?:\/\d{2,3})?(?:,\d{1,2})?\b/;
+    // Acepta "200/190X90X135" y dims mm con * como separador: "2030*595*658"
+    // Primer grupo hasta 4 dígitos para capturar mm en electros (2030mm=203cm)
+    const DIM_REGEX_FIX7 = /\b(\d{2,4})(?:\/\d{2,4})?(?:,\d{1,2})?[xX×*](\d{1,4})(?:\/\d{1,4})?(?:,\d{1,2})?[xX×*](\d{2,4})(?:\/\d{2,4})?(?:,\d{1,2})?\b/;
     const fix7_examples: string[] = [];
 
     for (let i = 0; i < entries.length; i++) {
@@ -855,12 +856,20 @@ export async function executeStage8(jobId: string): Promise<void> {
 
       const match = pm.desc.match(DIM_REGEX_FIX7);
       if (match) {
-        const d1 = parseFloat(match[1].replace(',', '.'));
-        const d2 = parseFloat(match[2].replace(',', '.'));
-        const d3 = parseFloat(match[3].replace(',', '.'));
+        let d1 = parseFloat(match[1].replace(',', '.'));
+        let d2 = parseFloat(match[2].replace(',', '.'));
+        let d3 = parseFloat(match[3].replace(',', '.'));
+        // Electros: dims en mm si alguna > 200 → dividir por 10 para obtener cm
+        if (isElectroGrande && (d1 > 200 || d2 > 200 || d3 > 200)) {
+          if (d1 > 200) d1 = Math.round(d1 / 10 * 10) / 10;
+          if (d2 > 200) d2 = Math.round(d2 / 10 * 10) / 10;
+          if (d3 > 200) d3 = Math.round(d3 / 10 * 10) / 10;
+          dimsSource = `fix7_dims_desc_mm:${d1}x${d2}x${d3}`;
+        } else {
+          dimsSource = `fix7_dims_desc:${d1}x${d2}x${d3}`;
+        }
         if (d1 >= 10 && d1 <= 400 && d2 >= 3 && d2 <= 300 && d3 >= 10 && d3 <= 400) {
           volFromDims = Math.round(d1 * d2 * d3 / 1000000 * 10000) / 10000;
-          dimsSource = `fix7_dims_desc:${d1}x${d2}x${d3}`;
         }
       }
 
