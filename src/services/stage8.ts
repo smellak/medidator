@@ -13,7 +13,7 @@ const BATCH_SIZE = 5;
 const BATCH_DELAY_MS = 1000;
 const SAVE_EVERY = 50;
 
-type EstimationLayer = 'erp_ground_truth' | 'gemini_embalaje' | 'ratio_subfamilia' | 'ratio_tipo' | 'promedio_subfamilia' | 'promedio_tipo' | 'promedio_subfamilia_corregido' | 'ratio_subfamilia_corregido_fix4' | 'ratio_desde_descripcion_fix5' | 'none';
+type EstimationLayer = 'erp_ground_truth' | 'gemini_embalaje' | 'ratio_subfamilia' | 'ratio_tipo' | 'promedio_subfamilia' | 'promedio_tipo' | 'promedio_subfamilia_corregido' | 'ratio_subfamilia_corregido_fix4' | 'ratio_desde_descripcion_fix5' | 'ratio_residual_fix7' | 'none';
 
 interface LogisticsEntry {
   'COD.ARTICULO': string;
@@ -537,6 +537,7 @@ export async function executeStage8(jobId: string): Promise<void> {
       fix3_mueble_tiny_no_avg: 0,
       fix4_erp_placeholder_corrected: 0,
       fix5_dims_from_description: 0,
+      fix7_residual_large_tiny: 0,
     };
 
     const EXTERIOR_REGEX = /\b(PARASOL|PERGOLA|PÉRGOLA|CENADOR|GAZEBO|CARPA|TOLDO)\b/i;
@@ -820,7 +821,106 @@ export async function executeStage8(jobId: string): Promise<void> {
       fix5_examples.forEach(ex => console.log(`  ${ex}`));
     }
 
-    console.log(`[Stage8] Post-validation done: fix1=${postValidationStats.fix1_exterior_plegable}, fix2_nulled=${postValidationStats.fix2_electro_excessive_nulled}, fix2_cache=${postValidationStats.fix2_electro_excessive_from_cache}, fix3=${postValidationStats.fix3_mueble_tiny_corrected}, fix4=${postValidationStats.fix4_erp_placeholder_corrected}, fix5=${postValidationStats.fix5_dims_from_description}`);
+    // ---- Fix 7: Electros/muebles grandes residuales con tiny volume ----
+    // Captura lo que Fix3-6 no pillaron: electros grandes (frigos, lavadoras, termos)
+    // y muebles grandes (recibidores, escritorios, literas, cabezales) del 00860/00664/04376.
+    // Nivel A: parsea NxNxN (acepta "200/190X90" tomando primer número)
+    // Nivel B: usa vol_producto del stage4 si > 0.05 m³
+    const ELECTRO_GRANDE_REGEX = /\b(FRIGO|FRIGOR[IÍ]FICO|LAVADORA|LAVAVAJILLAS|LAVASECADORA|SECADORA|CONGELADOR|HORNO\s|TERMO|CALENTADOR)\b/i;
+    const MUEBLE_GRANDE_REGEX = /\b(RECIBIDOR|ESCRITORIO|LITERA|BICAMA|CABEZAL|CABECERO|COMPOSICI[OÓ]N|APILABLE|VESTIDOR|MUEBLE\s+TV)\b/i;
+    const EXCLUDE_FIX7_REGEX = /\b(MINI|PEQUE[NÑ]O|PORT[AÁ]TIL|VIAJE|INFANTIL|MU[NÑ]ECA)\b/i;
+    // Acepta "200/190X90X135" tomando el primer número, más decimales con coma
+    const DIM_REGEX_FIX7 = /\b(\d{2,3})(?:\/\d{2,3})?(?:,\d{1,2})?[xX×](\d{1,3})(?:\/\d{1,3})?(?:,\d{1,2})?[xX×](\d{2,3})(?:\/\d{2,3})?(?:,\d{1,2})?\b/;
+    const fix7_examples: string[] = [];
+
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+
+      if (e.m3_logistico === null) continue;
+
+      const isElectroGrande = ELECTRO_GRANDE_REGEX.test(pm.desc);
+      const isMuebleGrande = MUEBLE_GRANDE_REGEX.test(pm.desc);
+
+      if (!isElectroGrande && !isMuebleGrande) continue;
+      if (EXCLUDE_FIX7_REGEX.test(pm.desc)) continue;
+
+      // Umbrales diferentes por tipo
+      const threshold = isElectroGrande ? 0.05 : 0.01;
+      if (e.m3_logistico >= threshold) continue;
+
+      // NIVEL A: parsear dims de la descripción
+      let volFromDims: number | null = null;
+      let dimsSource = '';
+
+      const match = pm.desc.match(DIM_REGEX_FIX7);
+      if (match) {
+        const d1 = parseFloat(match[1].replace(',', '.'));
+        const d2 = parseFloat(match[2].replace(',', '.'));
+        const d3 = parseFloat(match[3].replace(',', '.'));
+        if (d1 >= 10 && d1 <= 400 && d2 >= 3 && d2 <= 300 && d3 >= 10 && d3 <= 400) {
+          volFromDims = Math.round(d1 * d2 * d3 / 1000000 * 10000) / 10000;
+          dimsSource = `fix7_dims_desc:${d1}x${d2}x${d3}`;
+        }
+      }
+
+      // NIVEL B: si no hay dims parseables, usar vol_producto del stage4
+      if (volFromDims === null && pm.volProducto && pm.volProducto > 0.05) {
+        volFromDims = pm.volProducto;
+        dimsSource = `fix7_vol_producto_stage4:${pm.volProducto}`;
+      }
+
+      if (volFromDims === null) continue;
+
+      // Ratio según tipo
+      let ratio: number;
+      let confFix7: number;
+
+      if (isElectroGrande) {
+        ratio = 1.0;
+        confFix7 = 0.50;
+      } else {
+        const ratioData = (ratios.by_subfamilia_l2?.[pm.subfL2] as RatioGroup | undefined)
+          || (ratios.by_subfamilia_l1?.[pm.subfL1] as RatioGroup | undefined)
+          || (ratios.by_tipo?.[pm.tipo] as RatioGroup | undefined);
+        ratio = ratioData?.median || 0.85;
+        confFix7 = 0.45;
+      }
+
+      const nuevoVol = Math.round(volFromDims * ratio * 10000) / 10000;
+      const volOriginal = e.m3_logistico;
+
+      // Sanity: el nuevo volumen debe ser al menos 5x el original
+      if (nuevoVol < volOriginal * 5) continue;
+
+      // Ajustar contadores
+      const oldKey = e.estimation_layer as keyof typeof layerCounts;
+      if (layerCounts[oldKey] !== undefined && layerCounts[oldKey] > 0) {
+        layerCounts[oldKey]--;
+      }
+      layerCounts.ratio_subfamilia++;
+      layerConfidences.ratio_subfamilia.push(confFix7);
+
+      e.m3_logistico = nuevoVol;
+      e.estimation_layer = 'ratio_residual_fix7';
+      e.confidence = confFix7;
+      e.ratio_used = ratio;
+      e.ratio_source = dimsSource;
+      e.detail = `Fix7 ${isElectroGrande ? 'electro' : 'mueble'} grande tiny: vol_dims=${volFromDims} * ratio=${ratio} → ${nuevoVol} m³ (era ${volOriginal})`;
+
+      postValidationStats.fix7_residual_large_tiny++;
+      if (fix7_examples.length < 15) {
+        fix7_examples.push(`${pm.cod}: ${volOriginal}→${nuevoVol}m³ [${dimsSource}] | ${pm.desc.substring(0, 55)}`);
+      }
+    }
+
+    console.log(`[Stage8] Fix7 applied: ${postValidationStats.fix7_residual_large_tiny} large electros/furniture recovered`);
+    if (fix7_examples.length > 0) {
+      console.log('[Stage8] Fix7 examples:');
+      fix7_examples.forEach(ex => console.log(`  ${ex}`));
+    }
+
+    console.log(`[Stage8] Post-validation done: fix1=${postValidationStats.fix1_exterior_plegable}, fix2_nulled=${postValidationStats.fix2_electro_excessive_nulled}, fix2_cache=${postValidationStats.fix2_electro_excessive_from_cache}, fix3=${postValidationStats.fix3_mueble_tiny_corrected}, fix4=${postValidationStats.fix4_erp_placeholder_corrected}, fix5=${postValidationStats.fix5_dims_from_description}, fix7=${postValidationStats.fix7_residual_large_tiny}`);
 
     // ==========================================
     // Summary
