@@ -737,7 +737,8 @@ export async function executeStage8(jobId: string): Promise<void> {
     // El supplier 00860 (muebles MB-) tiene dims erróneas en stage4 pero la
     // descripción contiene las dims correctas: "MUEBLE TV MADERA 120X50X58 NEGRO"
     const EXCLUDE_PLANOS_REGEX = /\b(CUADRO|ESPEJO|LAMINA|LÁMINA|DECORACION|DECORACIÓN|COLGANTE|ESTRELLA|BANDEJA|NACIMIENTO|PAPANOEL)\b/i;
-    const DIM_REGEX = /\b(\d{2,3})[xX×](\d{1,3})[xX×](\d{2,3})\b/;
+    // Acepta enteros y decimales con coma: "145,5X40,5X60" o "185,42X35,56X55,88"
+    const DIM_REGEX = /\b(\d{2,3}(?:,\d{1,2})?)[xX×](\d{1,3}(?:,\d{1,2})?)[xX×](\d{2,3}(?:,\d{1,2})?)\b/;
     const fix5_examples: string[] = [];
 
     for (let i = 0; i < entries.length; i++) {
@@ -757,9 +758,9 @@ export async function executeStage8(jobId: string): Promise<void> {
       const match = pm.desc.match(DIM_REGEX);
       if (!match) continue;
 
-      const d1 = parseInt(match[1], 10);
-      const d2 = parseInt(match[2], 10);
-      const d3 = parseInt(match[3], 10);
+      const d1 = parseFloat(match[1].replace(',', '.'));
+      const d2 = parseFloat(match[2].replace(',', '.'));
+      const d3 = parseFloat(match[3].replace(',', '.'));
 
       // Sanity check: dims razonables (cm)
       if (d1 < 10 || d1 > 400 || d2 < 3 || d2 > 300 || d3 < 10 || d3 > 400) continue;
