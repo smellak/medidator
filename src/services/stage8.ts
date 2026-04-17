@@ -13,7 +13,7 @@ const BATCH_SIZE = 5;
 const BATCH_DELAY_MS = 1000;
 const SAVE_EVERY = 50;
 
-type EstimationLayer = 'erp_ground_truth' | 'gemini_embalaje' | 'ratio_subfamilia' | 'ratio_tipo' | 'promedio_subfamilia' | 'promedio_tipo' | 'promedio_subfamilia_corregido' | 'ratio_subfamilia_corregido_fix4' | 'none';
+type EstimationLayer = 'erp_ground_truth' | 'gemini_embalaje' | 'ratio_subfamilia' | 'ratio_tipo' | 'promedio_subfamilia' | 'promedio_tipo' | 'promedio_subfamilia_corregido' | 'ratio_subfamilia_corregido_fix4' | 'ratio_desde_descripcion_fix5' | 'none';
 
 interface LogisticsEntry {
   'COD.ARTICULO': string;
@@ -536,6 +536,7 @@ export async function executeStage8(jobId: string): Promise<void> {
       fix3_mueble_tiny_corrected: 0,
       fix3_mueble_tiny_no_avg: 0,
       fix4_erp_placeholder_corrected: 0,
+      fix5_dims_from_description: 0,
     };
 
     const EXTERIOR_REGEX = /\b(PARASOL|PERGOLA|PÉRGOLA|CENADOR|GAZEBO|CARPA|TOLDO)\b/i;
@@ -732,7 +733,93 @@ export async function executeStage8(jobId: string): Promise<void> {
       fix4_examples.forEach(ex => console.log(`  ${ex}`));
     }
 
-    console.log(`[Stage8] Post-validation done: fix1=${postValidationStats.fix1_exterior_plegable}, fix2_nulled=${postValidationStats.fix2_electro_excessive_nulled}, fix2_cache=${postValidationStats.fix2_electro_excessive_from_cache}, fix3=${postValidationStats.fix3_mueble_tiny_corrected}, fix4=${postValidationStats.fix4_erp_placeholder_corrected}`);
+    // ---- Fix 5: Supplier 00860 con dims en descripción ----
+    // El supplier 00860 (muebles MB-) tiene dims erróneas en stage4 pero la
+    // descripción contiene las dims correctas: "MUEBLE TV MADERA 120X50X58 NEGRO"
+    const EXCLUDE_PLANOS_REGEX = /\b(CUADRO|ESPEJO|LAMINA|LÁMINA|DECORACION|DECORACIÓN|COLGANTE|ESTRELLA|BANDEJA|NACIMIENTO|PAPANOEL)\b/i;
+    const DIM_REGEX = /\b(\d{2,3})[xX×](\d{1,3})[xX×](\d{2,3})\b/;
+    const fix5_examples: string[] = [];
+
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+
+      // Criterio 1: supplier 00860
+      if (!pm.cod.startsWith('00860')) continue;
+
+      // Criterio 2: m3 < 0.01 (incluye 0 / null)
+      if (e.m3_logistico !== null && e.m3_logistico >= 0.01) continue;
+
+      // Criterio 3: excluir productos planos/decorativos legítimamente pequeños
+      if (EXCLUDE_PLANOS_REGEX.test(pm.desc)) continue;
+
+      // Criterio 4: parsear dims de la descripción
+      const match = pm.desc.match(DIM_REGEX);
+      if (!match) continue;
+
+      const d1 = parseInt(match[1], 10);
+      const d2 = parseInt(match[2], 10);
+      const d3 = parseInt(match[3], 10);
+
+      // Sanity check: dims razonables (cm)
+      if (d1 < 10 || d1 > 400 || d2 < 3 || d2 > 300 || d3 < 10 || d3 > 400) continue;
+
+      // Volumen producto desde dims de descripción
+      const volProductoDesc = Math.round(d1 * d2 * d3 / 1000000 * 10000) / 10000;
+
+      // Ratio: subfamilia L2 → L1 → tipo → fallback 0.85
+      let fix5Ratio = 0.85;
+      let fix5Source = 'fix5_fallback_mueble';
+      const l2r = ratios.by_subfamilia_l2?.[pm.subfL2] as RatioGroup | undefined;
+      if (l2r && l2r.n >= 5) {
+        fix5Ratio = l2r.median;
+        fix5Source = `fix5_desc_dims:subfL2:${pm.subfL2}`;
+      } else {
+        const l1r = ratios.by_subfamilia_l1?.[pm.subfL1] as RatioGroup | undefined;
+        if (l1r && l1r.n >= 5) {
+          fix5Ratio = l1r.median;
+          fix5Source = `fix5_desc_dims:subfL1:${pm.subfL1}`;
+        } else {
+          const tr = ratios.by_tipo?.[pm.tipo] as RatioGroup | undefined;
+          if (tr && tr.n >= 5) {
+            fix5Ratio = tr.median;
+            fix5Source = `fix5_desc_dims:tipo:${pm.tipo}`;
+          }
+        }
+      }
+
+      const nuevoVol = Math.round(volProductoDesc * fix5Ratio * 10000) / 10000;
+      const volOriginal = e.m3_logistico;
+
+      // Ajustar contadores de capas
+      const oldLayer = e.estimation_layer;
+      const oldKey = oldLayer as keyof typeof layerCounts;
+      if (layerCounts[oldKey] !== undefined && layerCounts[oldKey] > 0) {
+        layerCounts[oldKey]--;
+      }
+      layerCounts.ratio_subfamilia++;
+      layerConfidences.ratio_subfamilia.push(0.45);
+
+      e.m3_logistico = nuevoVol;
+      e.estimation_layer = 'ratio_desde_descripcion_fix5';
+      e.confidence = 0.45;
+      e.ratio_used = fix5Ratio;
+      e.ratio_source = fix5Source;
+      e.detail = `Fix5 dims desc (${d1}x${d2}x${d3}cm, vol_prod=${volProductoDesc}): ratio ${fix5Ratio} → ${nuevoVol} m³`;
+
+      postValidationStats.fix5_dims_from_description++;
+      if (fix5_examples.length < 10) {
+        fix5_examples.push(`${pm.cod}: ${volOriginal}→${nuevoVol}m³ (${d1}x${d2}x${d3}) | ${pm.desc.substring(0, 50)}`);
+      }
+    }
+
+    console.log(`[Stage8] Fix5 applied: ${postValidationStats.fix5_dims_from_description} products recovered from description dims`);
+    if (fix5_examples.length > 0) {
+      console.log('[Stage8] Fix5 examples:');
+      fix5_examples.forEach(ex => console.log(`  ${ex}`));
+    }
+
+    console.log(`[Stage8] Post-validation done: fix1=${postValidationStats.fix1_exterior_plegable}, fix2_nulled=${postValidationStats.fix2_electro_excessive_nulled}, fix2_cache=${postValidationStats.fix2_electro_excessive_from_cache}, fix3=${postValidationStats.fix3_mueble_tiny_corrected}, fix4=${postValidationStats.fix4_erp_placeholder_corrected}, fix5=${postValidationStats.fix5_dims_from_description}`);
 
     // ==========================================
     // Summary
