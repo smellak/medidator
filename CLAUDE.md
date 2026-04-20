@@ -105,9 +105,13 @@ validate_200.js         # Validation script: 200-product coherence check via Gem
      - **Fix 4 — ERP placeholder 0.01**: muebles with ERP M3=0.01 AND vol_producto > 0.3 m³ → invalidate ERP and recalculate with ratio_subfamilia, estimation_layer='ratio_subfamilia_corregido_fix4', confidence 0.35-0.55 (~7 productos). Excludes colchones/alfombras (legitimately compactable). Moves from capa 1 → capa 3.
      - **Fix 5 — supplier 00860 dims from description**: supplier 00860 (MB- decor/furniture) with m3_logístico < 0.01 → extract NxNxN from product description (DIM_REGEX, regex acepta decimales con coma: "145,5X40,5X60"), compute vol, apply ratio_subfamilia. estimation_layer='ratio_desde_descripcion_fix5', confidence 0.45 (~298 productos). Excludes CUADRO/ESPEJO/LAMINA/DECORACION/etc. (legitimately flat/decorative). Moves from capa 4 → capa 3.
      - **Fix 7 — large electros/muebles residuales con tiny volume**: FRIGO/LAVADORA/TERMO/HORNO/etc. con vol < 0.05 m³, o RECIBIDOR/ESCRITORIO/LITERA/BICAMA/CABEZAL/etc. con vol < 0.01 m³ → Nivel A: parsear NxNxN desc (acepta "200/190X90" y "2030*595*658" con `*` como separador; electros: dims >200 divididas ÷10 para mm→cm), Nivel B: usar vol_producto stage4 si > 0.05 m³. estimation_layer='ratio_residual_fix7', confidence 0.45-0.50 (~9 productos). Capa 3.
-     - **Fix 8 — composiciones con ancho total en descripción**: COMPOSICIÓN con vol_logístico < 0.5 m³ → extrae "NNN CM" (≥80cm) como ancho total, usa prof=35cm + alto=200cm (calibrado contra ERP), aplica ratio_subfamilia. Solo aplica si nuevo vol ≥ 2× valor anterior. estimation_layer='ratio_composicion_ancho_fix8', confidence 0.35 (~56 productos). Capa 3. Nota: composiciones dormitorio (JORDAN EVO etc.) no son recuperables (no tienen "NNN CM" en descripción).
+     - **Fix 8 — composiciones con ancho total en descripción**: COMPOSICIÓN con vol_logístico < 0.5 m³ → extrae "NNN CM" (≥80cm) como ancho total, usa prof=35cm + alto=200cm (calibrado contra ERP), aplica ratio_subfamilia. Solo aplica si nuevo vol ≥ 2× valor anterior. estimation_layer='ratio_composicion_ancho_fix8', confidence 0.35 (~56 productos). Capa 3.
+     - **Fix 9 — cap por rango físico**: categorías con rango bien conocido (FRIGO, LAVADORA, LAVAVAJILLAS, MICROONDAS, CAMPANA, TV, HORNO_PLACA, ASPIRADOR, PEQ_ELECTRO) → clampar al límite. No aplica a ERP capa 1. TVs >85" excluidas del cap superior. Mesa de plancha excluida de PEQ_ELECTRO. estimation_layer='rango_fisico_fix9', confidence 0.30 (~147 productos). Capa 3.
+     - **Fix 10 — Gemini embalaje = producto**: layer='gemini_embalaje' con ratio vol_logístico/vol_producto < 1.2 y vol_producto entre 0.005-2.0 m³ → Gemini dio dims del producto no del embalaje → recalcular con ratio_subfamilia. estimation_layer='ratio_subfamilia_fix10_gemini_invalid', confidence 0.40 (~556 productos). Capa 3.
+     - **Fix 11 — paquete imposiblemente grande**: ratio > 12× cuando vol_producto > 0.05 m³, no large electro, no ERP → cap a vol_producto × 5. estimation_layer='ratio_subfamilia_fix11_too_big', confidence 0.35 (~2 productos). Capa 3.
+     - **Fix 12 — paquete imposiblemente pequeño**: ratio < 0.05× (embalaje < 5% del producto) cuando vol_producto entre 0.005-2.0 m³, no flat, no ERP=0.01 → recalcular con ratio_subfamilia. estimation_layer='ratio_subfamilia_fix12_too_small', confidence 0.40 (~7 productos). Capa 3.
    - Sets job.status = 'completed' (stage8 is the completion gate)
-   - Coverage on real dataset: 100% (14,323/14,324), total 5,617.79 m³
+   - Coverage on real dataset: 100% (14,323/14,324), total 5,662.15 m³
 
 ## Environment Variables
 
@@ -155,7 +159,7 @@ GEMINI_API_KEY=... node validate_200.js
 - **Coolify app UUID**: `wk8sggsg4koowwccssww4c4s`
 - **Domain**: `medidas.centrohogarsanchez.es`
 - **Docker**: Multi-stage build (deps → builder → runner), Node 20 Alpine
-- **Current container**: `wk8sggsg4koowwccssww4c4s-115025405842`
+- **Current container**: `wk8sggsg4koowwccssww4c4s-123842550377`
 
 ### Traefik ForwardAuth
 
