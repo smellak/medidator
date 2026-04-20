@@ -291,7 +291,7 @@ router.get('/:jobId/export', (req: Request, res: Response) => {
     const layerToCapa = (layer: string): number => {
       if (layer === 'erp_ground_truth') return 1;
       if (layer === 'gemini_embalaje') return 2;
-      if (layer === 'ratio_subfamilia' || layer === 'ratio_tipo' || layer === 'ratio_subfamilia_corregido_fix4' || layer === 'ratio_desde_descripcion_fix5' || layer === 'ratio_residual_fix7' || layer === 'ratio_composicion_ancho_fix8') return 3;
+      if (layer === 'ratio_subfamilia' || layer === 'ratio_tipo' || layer === 'ratio_subfamilia_corregido_fix4' || layer === 'ratio_desde_descripcion_fix5' || layer === 'ratio_residual_fix7' || layer === 'ratio_composicion_ancho_fix8' || layer === 'ratio_subfamilia_fix10_gemini_invalid' || layer === 'ratio_subfamilia_fix11_too_big' || layer === 'ratio_subfamilia_fix12_too_small' || layer === 'rango_fisico_fix9') return 3;
       if (layer === 'promedio_subfamilia' || layer === 'promedio_tipo' || layer === 'promedio_subfamilia_corregido') return 4;
       return 0;
     };

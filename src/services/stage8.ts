@@ -13,7 +13,7 @@ const BATCH_SIZE = 5;
 const BATCH_DELAY_MS = 1000;
 const SAVE_EVERY = 50;
 
-type EstimationLayer = 'erp_ground_truth' | 'gemini_embalaje' | 'ratio_subfamilia' | 'ratio_tipo' | 'promedio_subfamilia' | 'promedio_tipo' | 'promedio_subfamilia_corregido' | 'ratio_subfamilia_corregido_fix4' | 'ratio_desde_descripcion_fix5' | 'ratio_residual_fix7' | 'ratio_composicion_ancho_fix8' | 'none';
+type EstimationLayer = 'erp_ground_truth' | 'gemini_embalaje' | 'ratio_subfamilia' | 'ratio_tipo' | 'promedio_subfamilia' | 'promedio_tipo' | 'promedio_subfamilia_corregido' | 'ratio_subfamilia_corregido_fix4' | 'ratio_desde_descripcion_fix5' | 'ratio_residual_fix7' | 'ratio_composicion_ancho_fix8' | 'ratio_subfamilia_fix10_gemini_invalid' | 'ratio_subfamilia_fix11_too_big' | 'ratio_subfamilia_fix12_too_small' | 'rango_fisico_fix9' | 'none';
 
 interface LogisticsEntry {
   'COD.ARTICULO': string;
@@ -539,6 +539,10 @@ export async function executeStage8(jobId: string): Promise<void> {
       fix5_dims_from_description: 0,
       fix7_residual_large_tiny: 0,
       fix8_composicion_ancho: 0,
+      fix9_rango_fisico: 0,
+      fix10_gemini_invalid: 0,
+      fix11_ratio_too_big: 0,
+      fix12_ratio_too_small: 0,
     };
 
     const EXTERIOR_REGEX = /\b(PARASOL|PERGOLA|PÉRGOLA|CENADOR|GAZEBO|CARPA|TOLDO)\b/i;
@@ -1014,7 +1018,203 @@ export async function executeStage8(jobId: string): Promise<void> {
       fix8_examples.forEach(ex => console.log(`  ${ex}`));
     }
 
-    console.log(`[Stage8] Post-validation done: fix1=${postValidationStats.fix1_exterior_plegable}, fix2_nulled=${postValidationStats.fix2_electro_excessive_nulled}, fix2_cache=${postValidationStats.fix2_electro_excessive_from_cache}, fix3=${postValidationStats.fix3_mueble_tiny_corrected}, fix4=${postValidationStats.fix4_erp_placeholder_corrected}, fix5=${postValidationStats.fix5_dims_from_description}, fix7=${postValidationStats.fix7_residual_large_tiny}, fix8=${postValidationStats.fix8_composicion_ancho}`);
+    // ==========================================
+    // POST-VALIDATION FIXES 9-12 (order: Fix10 → Fix12 → Fix11 → Fix9)
+    // ==========================================
+
+    // Regex helpers shared by Fix10/11/12
+    const EXCLUDE_FLAT_FIX = /\b(CUADRO|ESPEJO|LAMINA|LÁMINA|ALFOMBRA|FELPUDO|PLAID|MANTA|EDREDON|COLCHON ENROLLADO)\b/i;
+    // Large electros: vol_producto from stage3 is typically underestimated → exclude from Fix11
+    const LARGE_ELECTRO_FIX = /\b(FRIGO|FRIGORIFICO|NEVERA|COMBINADO|LAVADORA|SECADORA|LAVASECADORA)\b/i;
+
+    // Helper: find best ratio for a product (L2 → L1 → tipo)
+    const getBestRatio = (subfL2: string, subfL1: string, tipo: string): { r: number; src: string } | null => {
+      const l2 = ratios.by_subfamilia_l2?.[subfL2] as RatioGroup | undefined;
+      if (l2 && l2.n >= 5) return { r: l2.median, src: `subfL2:${subfL2}` };
+      const l1 = ratios.by_subfamilia_l1?.[subfL1] as RatioGroup | undefined;
+      if (l1 && l1.n >= 5) return { r: l1.median, src: `subfL1:${subfL1}` };
+      const t = ratios.by_tipo?.[tipo] as RatioGroup | undefined;
+      if (t && t.n >= 5) return { r: t.median, src: `tipo:${tipo}` };
+      return null;
+    };
+
+    // ---- Fix 10: Gemini devolvió dims del producto, no del embalaje ----
+    // ratio vol_logistico / vol_producto < 1.2 → Gemini package ≈ product → invalid
+    const fix10_examples: string[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+      if (e.estimation_layer !== 'gemini_embalaje') continue;
+      if (e.m3_logistico === null || e.m3_logistico <= 0) continue;
+      const vp = pm.volProducto;
+      if (!vp || vp < 0.005 || vp > 2.0) continue;  // volProducto must be plausible
+      const ratio = e.m3_logistico / vp;
+      if (ratio >= 1.2) continue;
+
+      const best = getBestRatio(pm.subfL2, pm.subfL1, pm.tipo);
+      if (!best) continue;
+
+      const nuevoVol = Math.round(vp * best.r * 10000) / 10000;
+      const volOriginal = e.m3_logistico;
+
+      layerCounts.gemini_embalaje = Math.max(0, layerCounts.gemini_embalaje - 1);
+      layerCounts.ratio_subfamilia++;
+      layerConfidences.ratio_subfamilia.push(0.40);
+
+      e.m3_logistico = nuevoVol;
+      e.estimation_layer = 'ratio_subfamilia_fix10_gemini_invalid';
+      e.confidence = 0.40;
+      e.ratio_used = best.r;
+      e.ratio_source = `fix10:${best.src}`;
+      e.detail = `Fix10 Gemini inválido ratio_pkg/prod=${ratio.toFixed(2)} (<1.2) → ${vp}×${best.r}=${nuevoVol}m³ (era ${volOriginal})`;
+
+      postValidationStats.fix10_gemini_invalid++;
+      if (fix10_examples.length < 12) fix10_examples.push(`${pm.cod}: ${volOriginal}→${nuevoVol}m³ [r=${ratio.toFixed(2)}] | ${pm.desc.substring(0, 55)}`);
+    }
+    console.log(`[Stage8] Fix10 applied: ${postValidationStats.fix10_gemini_invalid} Gemini-invalid products recalculated`);
+    if (fix10_examples.length > 0) { console.log('[Stage8] Fix10 examples:'); fix10_examples.forEach(ex => console.log(`  ${ex}`)); }
+
+    // ---- Fix 12: Ratio paquete/producto < 0.05 (embalaje imposiblemente pequeño) ----
+    const fix12_examples: string[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+      if (e.m3_logistico === null || e.m3_logistico <= 0) continue;
+      const vp = pm.volProducto;
+      if (!vp || vp < 0.005 || vp > 2.0) continue;
+      if (EXCLUDE_FLAT_FIX.test(pm.desc)) continue;
+      // Exclude ERP=0.01 (colchones enrollados verified compact)
+      if (e.estimation_layer === 'erp_ground_truth' && Math.abs(e.m3_logistico - 0.01) < 0.001) continue;
+
+      const ratio = e.m3_logistico / vp;
+      if (ratio >= 0.05) continue;
+
+      const best = getBestRatio(pm.subfL2, pm.subfL1, pm.tipo);
+      if (!best) continue;
+
+      const nuevoVol = Math.round(vp * best.r * 10000) / 10000;
+      const volOriginal = e.m3_logistico;
+
+      const oldKey12 = e.estimation_layer as keyof typeof layerCounts;
+      if (layerCounts[oldKey12] !== undefined && (layerCounts[oldKey12] as number) > 0) (layerCounts[oldKey12] as number)--;
+      layerCounts.ratio_subfamilia++;
+      layerConfidences.ratio_subfamilia.push(0.40);
+
+      e.m3_logistico = nuevoVol;
+      e.estimation_layer = 'ratio_subfamilia_fix12_too_small';
+      e.confidence = 0.40;
+      e.ratio_used = best.r;
+      e.ratio_source = `fix12:${best.src}`;
+      e.detail = `Fix12 ratio_pkg/prod=${ratio.toFixed(3)} (<0.05) imposible → ${vp}×${best.r}=${nuevoVol}m³ (era ${volOriginal})`;
+
+      postValidationStats.fix12_ratio_too_small++;
+      if (fix12_examples.length < 12) fix12_examples.push(`${pm.cod}: ${volOriginal}→${nuevoVol}m³ [r=${ratio.toFixed(3)}] | ${pm.desc.substring(0, 55)}`);
+    }
+    console.log(`[Stage8] Fix12 applied: ${postValidationStats.fix12_ratio_too_small} impossibly-small packages recalculated`);
+    if (fix12_examples.length > 0) { console.log('[Stage8] Fix12 examples:'); fix12_examples.forEach(ex => console.log(`  ${ex}`)); }
+
+    // ---- Fix 11: Ratio paquete/producto > 12 (embalaje imposiblemente grande) ----
+    // Only when vol_producto is reliable (>0.05 m³), not large electro, not ERP capa 1
+    const fix11_examples: string[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+      if (e.m3_logistico === null || e.m3_logistico <= 0) continue;
+      const vp = pm.volProducto;
+      if (!vp || vp < 0.05 || vp > 2.0) continue;  // only reliable vol_producto
+      if (EXCLUDE_FLAT_FIX.test(pm.desc)) continue;
+      if (LARGE_ELECTRO_FIX.test(pm.desc)) continue;  // stage3 underestimates these
+      if (e.estimation_layer === 'erp_ground_truth') continue;
+
+      const ratio = e.m3_logistico / vp;
+      if (ratio <= 12) continue;
+
+      // Cap conservatively at vol_producto × 5
+      const cappedVol = Math.round(vp * 5 * 10000) / 10000;
+      const volOriginal = e.m3_logistico;
+
+      const oldKey11 = e.estimation_layer as keyof typeof layerCounts;
+      if (layerCounts[oldKey11] !== undefined && (layerCounts[oldKey11] as number) > 0) (layerCounts[oldKey11] as number)--;
+      layerCounts.ratio_subfamilia++;
+      layerConfidences.ratio_subfamilia.push(0.35);
+
+      e.m3_logistico = cappedVol;
+      e.estimation_layer = 'ratio_subfamilia_fix11_too_big';
+      e.confidence = 0.35;
+      e.ratio_used = 5;
+      e.ratio_source = `fix11_cap5x:vol_producto=${vp}`;
+      e.detail = `Fix11 ratio_pkg/prod=${ratio.toFixed(1)}x (>12) imposible → capped at ${vp}×5=${cappedVol}m³ (era ${volOriginal})`;
+
+      postValidationStats.fix11_ratio_too_big++;
+      if (fix11_examples.length < 12) fix11_examples.push(`${pm.cod}: ${volOriginal}→${cappedVol}m³ [r=${ratio.toFixed(1)}x] | ${pm.desc.substring(0, 55)}`);
+    }
+    console.log(`[Stage8] Fix11 applied: ${postValidationStats.fix11_ratio_too_big} impossibly-large packages capped`);
+    if (fix11_examples.length > 0) { console.log('[Stage8] Fix11 examples:'); fix11_examples.forEach(ex => console.log(`  ${ex}`)); }
+
+    // ---- Fix 9: Cap productos fuera de rango físico esperado por categoría ----
+    // Aplica solo a capas 2-4 (no ERP capa 1)
+    const FIX9_CATEGORIES: Array<{ name: string; regex: RegExp; min: number; max: number }> = [
+      { name: 'LAVADORA',     regex: /\b(LAVADORA|LAVASECADORA)\b/i,                             min: 0.25, max: 0.65 },
+      { name: 'SECADORA',     regex: /\bSECADORA\b/i,                                            min: 0.25, max: 0.65 },
+      { name: 'LAVAVAJILLAS', regex: /\bLAVAVAJILLAS\b/i,                                        min: 0.25, max: 0.55 },
+      { name: 'MICROONDAS',   regex: /\bMICROONDAS\b/i,                                          min: 0.03, max: 0.18 },
+      { name: 'CAMPANA',      regex: /\bCAMPANA\b/i,                                             min: 0.06, max: 0.45 },
+      { name: 'TV',           regex: /\b(TELEVISOR|SMART TV|LED TV|QLED|OLED)\b/i,              min: 0.03, max: 1.50 },
+      { name: 'HORNO_PLACA',  regex: /\bHORNO\b|VITROCERAMICA|PLACA INDUCCION|PLACA COCINA/i,   min: 0.03, max: 0.50 },
+      { name: 'ASPIRADOR',    regex: /\bASPIRADOR\b/i,                                           min: 0.02, max: 0.25 },
+      { name: 'PEQ_ELECTRO',  regex: /\b(CAFETERA|BATIDORA|TOSTADOR|PICADORA|FREIDORA|EXPRIMIDOR)\b/i, min: 0.001, max: 0.10 },
+    ];
+    // TVs >85" can exceed max — skip upper cap for these
+    const FIX9_BIG_TV_REGEX = /\b(85|86|88|90|95|98|100|105|110)\s*["]/i;
+    // Mesas de plancha son artículos de >0.10 m³ — no son PEQ_ELECTRO
+    const FIX9_MESA_PLANCHA_REGEX = /MESA.*PLANCHA|CENTRO.*PLANCH|PLANCHA.*MESA/i;
+    // FRIGO tiene su propio rango pero se maneja desde LAVAVAJILLAS/LAVADORA arriba;
+    // FRIGO range lo añadimos explícitamente:
+    FIX9_CATEGORIES.unshift({ name: 'FRIGO', regex: /\b(FRIGO|FRIGORIFICO|NEVERA|COMBINADO)\b/i, min: 0.35, max: 1.80 });
+
+    const fix9_examples: string[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+      if (e.m3_logistico === null || e.m3_logistico <= 0) continue;
+      if (e.estimation_layer === 'erp_ground_truth') continue;  // trust ERP
+
+      for (const cat of FIX9_CATEGORIES) {
+        if (!cat.regex.test(pm.desc)) continue;
+
+        // Specific exclusions
+        if (cat.name === 'PEQ_ELECTRO' && FIX9_MESA_PLANCHA_REGEX.test(pm.desc)) break;
+        if (cat.name === 'TV' && FIX9_BIG_TV_REGEX.test(pm.desc)) {
+          // Only apply lower cap, not upper
+          if (e.m3_logistico >= cat.min) break;
+        }
+
+        const volActual = e.m3_logistico;
+        let clamped: number;
+        if (volActual < cat.min) clamped = cat.min;
+        else if (volActual > cat.max) clamped = cat.max;
+        else break;  // within range, no action needed
+
+        const oldKey9 = e.estimation_layer as keyof typeof layerCounts;
+        if (layerCounts[oldKey9] !== undefined && (layerCounts[oldKey9] as number) > 0) (layerCounts[oldKey9] as number)--;
+        layerCounts.ratio_subfamilia++;
+        layerConfidences.ratio_subfamilia.push(0.30);
+
+        e.m3_logistico = clamped;
+        e.estimation_layer = 'rango_fisico_fix9';
+        e.confidence = 0.30;
+        e.ratio_source = `fix9_${cat.name}:rango=[${cat.min},${cat.max}]`;
+        e.detail = `Fix9 rango físico ${cat.name}: ${volActual}→${clamped}m³ (límite ${volActual < cat.min ? 'min' : 'max'}=${volActual < cat.min ? cat.min : cat.max})`;
+
+        postValidationStats.fix9_rango_fisico++;
+        if (fix9_examples.length < 12) fix9_examples.push(`${pm.cod}: ${volActual}→${clamped}m³ [${cat.name}] | ${pm.desc.substring(0, 55)}`);
+        break;
+      }
+    }
+    console.log(`[Stage8] Fix9 applied: ${postValidationStats.fix9_rango_fisico} products capped to physical range`);
+    if (fix9_examples.length > 0) { console.log('[Stage8] Fix9 examples:'); fix9_examples.forEach(ex => console.log(`  ${ex}`)); }
+
+    console.log(`[Stage8] Post-validation done: fix1=${postValidationStats.fix1_exterior_plegable}, fix2_nulled=${postValidationStats.fix2_electro_excessive_nulled}, fix2_cache=${postValidationStats.fix2_electro_excessive_from_cache}, fix3=${postValidationStats.fix3_mueble_tiny_corrected}, fix4=${postValidationStats.fix4_erp_placeholder_corrected}, fix5=${postValidationStats.fix5_dims_from_description}, fix7=${postValidationStats.fix7_residual_large_tiny}, fix8=${postValidationStats.fix8_composicion_ancho}, fix9=${postValidationStats.fix9_rango_fisico}, fix10=${postValidationStats.fix10_gemini_invalid}, fix11=${postValidationStats.fix11_ratio_too_big}, fix12=${postValidationStats.fix12_ratio_too_small}`);
 
     // ==========================================
     // Summary
