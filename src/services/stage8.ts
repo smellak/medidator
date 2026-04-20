@@ -13,7 +13,7 @@ const BATCH_SIZE = 5;
 const BATCH_DELAY_MS = 1000;
 const SAVE_EVERY = 50;
 
-type EstimationLayer = 'erp_ground_truth' | 'gemini_embalaje' | 'ratio_subfamilia' | 'ratio_tipo' | 'promedio_subfamilia' | 'promedio_tipo' | 'promedio_subfamilia_corregido' | 'ratio_subfamilia_corregido_fix4' | 'ratio_desde_descripcion_fix5' | 'ratio_residual_fix7' | 'none';
+type EstimationLayer = 'erp_ground_truth' | 'gemini_embalaje' | 'ratio_subfamilia' | 'ratio_tipo' | 'promedio_subfamilia' | 'promedio_tipo' | 'promedio_subfamilia_corregido' | 'ratio_subfamilia_corregido_fix4' | 'ratio_desde_descripcion_fix5' | 'ratio_residual_fix7' | 'ratio_composicion_ancho_fix8' | 'none';
 
 interface LogisticsEntry {
   'COD.ARTICULO': string;
@@ -538,6 +538,7 @@ export async function executeStage8(jobId: string): Promise<void> {
       fix4_erp_placeholder_corrected: 0,
       fix5_dims_from_description: 0,
       fix7_residual_large_tiny: 0,
+      fix8_composicion_ancho: 0,
     };
 
     const EXTERIOR_REGEX = /\b(PARASOL|PERGOLA|PÉRGOLA|CENADOR|GAZEBO|CARPA|TOLDO)\b/i;
@@ -929,7 +930,91 @@ export async function executeStage8(jobId: string): Promise<void> {
       fix7_examples.forEach(ex => console.log(`  ${ex}`));
     }
 
-    console.log(`[Stage8] Post-validation done: fix1=${postValidationStats.fix1_exterior_plegable}, fix2_nulled=${postValidationStats.fix2_electro_excessive_nulled}, fix2_cache=${postValidationStats.fix2_electro_excessive_from_cache}, fix3=${postValidationStats.fix3_mueble_tiny_corrected}, fix4=${postValidationStats.fix4_erp_placeholder_corrected}, fix5=${postValidationStats.fix5_dims_from_description}, fix7=${postValidationStats.fix7_residual_large_tiny}`);
+    // ---- Fix 8: Composiciones con ancho total en descripción ----
+    // Composiciones cuyo vol < 0.5 m³ tienen "NNN CM" (NNN >= 80) en descripción = ancho total.
+    // El pipeline capturó dims de UN módulo individual en vez de la composición completa.
+    // Recalcular: vol = ancho × PROF_ESTANDAR × ALTO_ESTANDAR / 1e6 × ratio_subfamilia
+    // Calibrado contra ERP reales 00300: prof=35cm, alto=200cm
+    const COMPOSICION_FIX8_REGEX = /\bCOMPOSICI[OÓ]N\b/i;
+    const PROF_COMPOSICION = 35;  // cm, calibrado contra ERP 00300 salon/recibidor
+    const ALTO_COMPOSICION = 200; // cm, estándar composición de muebles
+    const fix8_examples: string[] = [];
+
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+
+      if (!COMPOSICION_FIX8_REGEX.test(pm.desc)) continue;
+      if (e.m3_logistico === null || e.m3_logistico >= 0.5) continue;
+
+      // Buscar primer "NNN CM" con NNN >= 80 (ancho total de la composición)
+      let anchoTotal: number | null = null;
+      const anchoRe = /\b(\d{2,3})\s*CM\b/gi;
+      let mAncho: RegExpExecArray | null;
+      while ((mAncho = anchoRe.exec(pm.desc)) !== null) {
+        const val = parseInt(mAncho[1], 10);
+        if (val >= 80) { anchoTotal = val; break; }
+      }
+      if (!anchoTotal) continue;
+
+      // Vol composición usando ancho total + dimensiones estándar
+      const volComposicion = Math.round(anchoTotal * PROF_COMPOSICION * ALTO_COMPOSICION / 1_000_000 * 10000) / 10000;
+
+      // Ratio: L2 → L1 → tipo → fallback 0.66
+      let fix8Ratio = 0.66;
+      let fix8Source = 'fix8_fallback_mueble';
+      const l2r8 = ratios.by_subfamilia_l2?.[pm.subfL2] as RatioGroup | undefined;
+      if (l2r8 && l2r8.n >= 5) {
+        fix8Ratio = l2r8.median;
+        fix8Source = `fix8_composicion:subfL2:${pm.subfL2}`;
+      } else {
+        const l1r8 = ratios.by_subfamilia_l1?.[pm.subfL1] as RatioGroup | undefined;
+        if (l1r8 && l1r8.n >= 5) {
+          fix8Ratio = l1r8.median;
+          fix8Source = `fix8_composicion:subfL1:${pm.subfL1}`;
+        } else {
+          const tr8 = ratios.by_tipo?.[pm.tipo] as RatioGroup | undefined;
+          if (tr8 && tr8.n >= 5) {
+            fix8Ratio = tr8.median;
+            fix8Source = `fix8_composicion:tipo:${pm.tipo}`;
+          }
+        }
+      }
+
+      const nuevoVol = Math.round(volComposicion * fix8Ratio * 10000) / 10000;
+      const volOriginal = e.m3_logistico;
+
+      // Solo aplicar si mejora significativa (≥2x)
+      if (nuevoVol < volOriginal * 2) continue;
+
+      // Ajustar contadores
+      const oldKey8 = e.estimation_layer as keyof typeof layerCounts;
+      if (layerCounts[oldKey8] !== undefined && layerCounts[oldKey8] > 0) {
+        layerCounts[oldKey8]--;
+      }
+      layerCounts.ratio_subfamilia++;
+      layerConfidences.ratio_subfamilia.push(0.35);
+
+      e.m3_logistico = nuevoVol;
+      e.estimation_layer = 'ratio_composicion_ancho_fix8';
+      e.confidence = 0.35;
+      e.ratio_used = fix8Ratio;
+      e.ratio_source = fix8Source;
+      e.detail = `Fix8 composición ${anchoTotal}cm: ${anchoTotal}×${PROF_COMPOSICION}×${ALTO_COMPOSICION}cm=${volComposicion}m³ × ratio=${fix8Ratio} → ${nuevoVol}m³ (era ${volOriginal})`;
+
+      postValidationStats.fix8_composicion_ancho++;
+      if (fix8_examples.length < 15) {
+        fix8_examples.push(`${pm.cod}: ${volOriginal}→${nuevoVol}m³ [ancho=${anchoTotal}cm,r=${fix8Ratio}] | ${pm.desc.substring(0, 55)}`);
+      }
+    }
+
+    console.log(`[Stage8] Fix8 applied: ${postValidationStats.fix8_composicion_ancho} composiciones corrected via total width`);
+    if (fix8_examples.length > 0) {
+      console.log('[Stage8] Fix8 examples:');
+      fix8_examples.forEach(ex => console.log(`  ${ex}`));
+    }
+
+    console.log(`[Stage8] Post-validation done: fix1=${postValidationStats.fix1_exterior_plegable}, fix2_nulled=${postValidationStats.fix2_electro_excessive_nulled}, fix2_cache=${postValidationStats.fix2_electro_excessive_from_cache}, fix3=${postValidationStats.fix3_mueble_tiny_corrected}, fix4=${postValidationStats.fix4_erp_placeholder_corrected}, fix5=${postValidationStats.fix5_dims_from_description}, fix7=${postValidationStats.fix7_residual_large_tiny}, fix8=${postValidationStats.fix8_composicion_ancho}`);
 
     // ==========================================
     // Summary
