@@ -13,7 +13,7 @@ const BATCH_SIZE = 5;
 const BATCH_DELAY_MS = 1000;
 const SAVE_EVERY = 50;
 
-type EstimationLayer = 'erp_ground_truth' | 'gemini_embalaje' | 'ratio_subfamilia' | 'ratio_tipo' | 'promedio_subfamilia' | 'promedio_tipo' | 'promedio_subfamilia_corregido' | 'ratio_subfamilia_corregido_fix4' | 'ratio_desde_descripcion_fix5' | 'ratio_residual_fix7' | 'ratio_composicion_ancho_fix8' | 'ratio_subfamilia_fix10_gemini_invalid' | 'ratio_subfamilia_fix11_too_big' | 'ratio_subfamilia_fix12_too_small' | 'rango_fisico_fix9' | 'none';
+type EstimationLayer = 'erp_ground_truth' | 'gemini_embalaje' | 'ratio_subfamilia' | 'ratio_tipo' | 'promedio_subfamilia' | 'promedio_tipo' | 'promedio_subfamilia_corregido' | 'ratio_subfamilia_corregido_fix4' | 'ratio_desde_descripcion_fix5' | 'ratio_residual_fix7' | 'ratio_composicion_ancho_fix8' | 'ratio_subfamilia_fix10_gemini_invalid' | 'ratio_subfamilia_fix11_too_big' | 'ratio_subfamilia_fix12_too_small' | 'rango_fisico_fix9' | 'erp_bogal_dm3_fix13' | 'vol_tipo_apple_fix19' | 'erp_placeholder_ampliado_fix18' | 'subfamilia_silla_fix17' | 'multiplicador_bultos_fix16' | 'dims_corregidas_fix15' | 'ratio_minimo_fisico_fix14' | 'none';
 
 interface LogisticsEntry {
   'COD.ARTICULO': string;
@@ -543,6 +543,13 @@ export async function executeStage8(jobId: string): Promise<void> {
       fix10_gemini_invalid: 0,
       fix11_ratio_too_big: 0,
       fix12_ratio_too_small: 0,
+      fix13_bogal_erp_invalidated: 0,
+      fix19_apple_vol_assigned: 0,
+      fix18_erp_placeholder_extended: 0,
+      fix17_silla_subfamilia: 0,
+      fix16_split_multibulto: 0,
+      fix15_frigo_alto_corrected: 0,
+      fix14_ratio_minimo: 0,
     };
 
     const EXTERIOR_REGEX = /\b(PARASOL|PERGOLA|PÉRGOLA|CENADOR|GAZEBO|CARPA|TOLDO)\b/i;
@@ -1214,7 +1221,210 @@ export async function executeStage8(jobId: string): Promise<void> {
     console.log(`[Stage8] Fix9 applied: ${postValidationStats.fix9_rango_fisico} products capped to physical range`);
     if (fix9_examples.length > 0) { console.log('[Stage8] Fix9 examples:'); fix9_examples.forEach(ex => console.log(`  ${ex}`)); }
 
-    console.log(`[Stage8] Post-validation done: fix1=${postValidationStats.fix1_exterior_plegable}, fix2_nulled=${postValidationStats.fix2_electro_excessive_nulled}, fix2_cache=${postValidationStats.fix2_electro_excessive_from_cache}, fix3=${postValidationStats.fix3_mueble_tiny_corrected}, fix4=${postValidationStats.fix4_erp_placeholder_corrected}, fix5=${postValidationStats.fix5_dims_from_description}, fix7=${postValidationStats.fix7_residual_large_tiny}, fix8=${postValidationStats.fix8_composicion_ancho}, fix9=${postValidationStats.fix9_rango_fisico}, fix10=${postValidationStats.fix10_gemini_invalid}, fix11=${postValidationStats.fix11_ratio_too_big}, fix12=${postValidationStats.fix12_ratio_too_small}`);
+    // ---- Fix 13: ERP BOGAL (proveedor 00362) en dm³ — ratio ERP/vp fuera de rango ----
+    const ENROLLABLE_REGEX_EXT = /\b(COLCHON|COLCHÓN|ALFOMBRA|FELPUDO|MANTA|EDREDON|EDREDÓN)\b/i;
+    const fix13_examples: string[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+      if (e.estimation_layer !== 'erp_ground_truth') continue;
+      if (!pm.cod.startsWith('00362')) continue;
+      if (e.m3_logistico === null || e.m3_logistico <= 0) continue;
+      const vp = pm.volProducto;
+      if (!vp || vp < 0.1) continue;
+      const ratio = e.m3_logistico / vp;
+      if (ratio >= 0.08 && ratio <= 10) continue;  // ERP plausible
+      const best = getBestRatio(pm.subfL2, pm.subfL1, pm.tipo);
+      if (!best) continue;
+      const nuevoVol = Math.round(vp * best.r * 10000) / 10000;
+      const volOriginal = e.m3_logistico;
+      layerCounts.erp_ground_truth = Math.max(0, layerCounts.erp_ground_truth - 1);
+      layerCounts.ratio_subfamilia++;
+      e.m3_logistico = nuevoVol;
+      e.estimation_layer = 'erp_bogal_dm3_fix13';
+      e.confidence = 0.40;
+      e.ratio_used = best.r;
+      e.ratio_source = `fix13:${best.src}`;
+      e.detail = `Fix13 BOGAL ERP ratio=${ratio.toFixed(3)} (fuera 0.08-10) → ${vp}×${best.r}=${nuevoVol}m³ (era ${volOriginal})`;
+      postValidationStats.fix13_bogal_erp_invalidated++;
+      if (fix13_examples.length < 12) fix13_examples.push(`${pm.cod}: ${volOriginal}→${nuevoVol}m³ [r=${ratio.toFixed(3)}] | ${pm.desc.substring(0, 55)}`);
+    }
+    console.log(`[Stage8] Fix13 applied: ${postValidationStats.fix13_bogal_erp_invalidated} BOGAL ERP invalidated`);
+    if (fix13_examples.length > 0) { console.log('[Stage8] Fix13 examples:'); fix13_examples.forEach(ex => console.log(`  ${ex}`)); }
+
+    // ---- Fix 19: Apple products (proveedor 01172) sin EAN — vol por tipo ----
+    const FIX19_APPLE_LAYERS = new Set<EstimationLayer>(['promedio_subfamilia', 'ratio_subfamilia', 'promedio_tipo', 'ratio_tipo', 'promedio_subfamilia_corregido', 'rango_fisico_fix9']);
+    const fix19_examples: string[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+      if (!pm.cod.startsWith('01172')) continue;
+      if (!FIX19_APPLE_LAYERS.has(e.estimation_layer as EstimationLayer)) continue;
+      if (e.m3_logistico === null) continue;
+      const desc = pm.desc.toUpperCase();
+      let targetVol: number | null = null;
+      let targetConf = 0.55;
+      if (/\bIPAD\b|\bTABLET\b/.test(desc)) { targetVol = 0.003; }
+      else if (/\bMACBOOK\b|\bPORTATIL\b|\bLAPTOP\b/.test(desc)) { targetVol = 0.012; }
+      else if (/\bIMACB?\b|\bIMAC\b/.test(desc)) { targetVol = 0.035; targetConf = 0.50; }
+      else if (/\bMAC MINI\b|\bMAC STUDIO\b/.test(desc)) { targetVol = 0.006; targetConf = 0.50; }
+      else if (/\bIPHONE\b|\bMOVIL\b|\bMÓVIL\b/.test(desc)) { targetVol = 0.0008; }
+      else if (/\bAPPLE WATCH\b|\bSMARTWATCH\b/.test(desc)) { targetVol = 0.0003; }
+      else if (/\bAIRPODS\b|\bAURICULAR\b/.test(desc)) { targetVol = 0.0004; }
+      if (targetVol === null) continue;
+      const volOriginal = e.m3_logistico;
+      e.m3_logistico = targetVol;
+      e.estimation_layer = 'vol_tipo_apple_fix19';
+      e.confidence = targetConf;
+      e.ratio_used = null;
+      e.ratio_source = 'fix19_apple_keyword';
+      e.detail = `Fix19 Apple tipo=${desc.split(' ').slice(0,3).join(' ')}: ${volOriginal}→${targetVol}m³`;
+      postValidationStats.fix19_apple_vol_assigned++;
+      if (fix19_examples.length < 12) fix19_examples.push(`${pm.cod}: ${volOriginal}→${targetVol}m³ | ${pm.desc.substring(0, 55)}`);
+    }
+    console.log(`[Stage8] Fix19 applied: ${postValidationStats.fix19_apple_vol_assigned} Apple products corrected`);
+    if (fix19_examples.length > 0) { console.log('[Stage8] Fix19 examples:'); fix19_examples.forEach(ex => console.log(`  ${ex}`)); }
+
+    // ---- Fix 18: ERP placeholder 0.01 ampliado (vp > 0.05, antes vp > 0.3) ----
+    const fix18_examples: string[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+      if (pm.m3Erp !== 0.01) continue;
+      if (e.estimation_layer !== 'erp_ground_truth') continue;  // Fix4 ya lo corrigió si vp > 0.3
+      if (pm.tipo === 'accesorio') continue;
+      const vp = pm.volProducto;
+      if (!vp || vp <= 0.05) continue;
+      if (ENROLLABLE_REGEX_EXT.test(pm.desc)) continue;
+      const best = getBestRatio(pm.subfL2, pm.subfL1, pm.tipo);
+      if (!best) continue;
+      const nuevoVol = Math.round(vp * best.r * 10000) / 10000;
+      const volOriginal = e.m3_logistico!;
+      layerCounts.erp_ground_truth = Math.max(0, layerCounts.erp_ground_truth - 1);
+      layerCounts.ratio_subfamilia++;
+      e.m3_logistico = nuevoVol;
+      e.estimation_layer = 'erp_placeholder_ampliado_fix18';
+      e.confidence = 0.40;
+      e.ratio_used = best.r;
+      e.ratio_source = `fix18:${best.src}`;
+      e.detail = `Fix18 ERP placeholder 0.01 (vp=${vp}) → ${vp}×${best.r}=${nuevoVol}m³`;
+      postValidationStats.fix18_erp_placeholder_extended++;
+      if (fix18_examples.length < 12) fix18_examples.push(`${pm.cod}: ${volOriginal}→${nuevoVol}m³ | ${pm.desc.substring(0, 55)}`);
+    }
+    console.log(`[Stage8] Fix18 applied: ${postValidationStats.fix18_erp_placeholder_extended} ERP placeholder 0.01 extended`);
+    if (fix18_examples.length > 0) { console.log('[Stage8] Fix18 examples:'); fix18_examples.forEach(ex => console.log(`  ${ex}`)); }
+
+    // ---- Fix 17: Subfamilia 00001.00057 sillas vs sofás ----
+    const FIX17_SILLA_REGEX = /\b(SILLA|TABURETE|BUTACA|SILLON|SILLÓN)\b/i;
+    const fix17_examples: string[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+      if (pm.subfL2 !== '00001.00057') continue;
+      if (e.estimation_layer !== 'promedio_subfamilia' && e.estimation_layer !== 'promedio_subfamilia_corregido') continue;
+      if (e.m3_logistico === null || e.m3_logistico < 0.50) continue;  // only correct inflated values
+      const anchoCm: number | null = (products[i] as any).measures?.ancho_cm ?? null;
+      const isSilla = (anchoCm !== null && anchoCm < 90) ||
+                      (anchoCm === null && FIX17_SILLA_REGEX.test(pm.desc));
+      if (!isSilla) continue;
+      const volOriginal = e.m3_logistico;
+      e.m3_logistico = 0.20;
+      e.estimation_layer = 'subfamilia_silla_fix17';
+      e.confidence = 0.40;
+      e.ratio_used = null;
+      e.ratio_source = `fix17:subfL2=00001.00057,ancho=${anchoCm}cm`;
+      e.detail = `Fix17 silla subfamilia 00001.00057: ${volOriginal}→0.20m³ (ancho=${anchoCm}cm)`;
+      postValidationStats.fix17_silla_subfamilia++;
+      if (fix17_examples.length < 12) fix17_examples.push(`${pm.cod}: ${volOriginal}→0.20m³ [a=${anchoCm}] | ${pm.desc.substring(0, 55)}`);
+    }
+    console.log(`[Stage8] Fix17 applied: ${postValidationStats.fix17_silla_subfamilia} sillas subfamilia 00001.00057 corrected`);
+    if (fix17_examples.length > 0) { console.log('[Stage8] Fix17 examples:'); fix17_examples.forEach(ex => console.log(`  ${ex}`)); }
+
+    // ---- Fix 16: Split AC multi-bulto — multiplicador por unidad exterior ----
+    const FIX16_SPLIT_REGEX = /\bSPLIT\b/i;
+    const fix16_examples: string[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+      if (!FIX16_SPLIT_REGEX.test(pm.desc)) continue;
+      if (pm.bultos < 2) continue;
+      if (e.estimation_layer === 'erp_ground_truth') continue;  // confiar en ERP
+      if (e.m3_logistico === null || e.m3_logistico <= 0) continue;
+      const factor = pm.bultos >= 3 ? 2.5 : 1.8;
+      const volOriginal = e.m3_logistico;
+      const nuevoVol = Math.round(volOriginal * factor * 10000) / 10000;
+      e.m3_logistico = nuevoVol;
+      e.estimation_layer = 'multiplicador_bultos_fix16';
+      e.confidence = 0.45;
+      e.ratio_source = `fix16:split_${pm.bultos}bultos_x${factor}`;
+      e.detail = `Fix16 SPLIT ${pm.bultos} bultos: ${volOriginal}×${factor}=${nuevoVol}m³`;
+      postValidationStats.fix16_split_multibulto++;
+      if (fix16_examples.length < 12) fix16_examples.push(`${pm.cod}: ${volOriginal}→${nuevoVol}m³ [${pm.bultos}b×${factor}] | ${pm.desc.substring(0, 55)}`);
+    }
+    console.log(`[Stage8] Fix16 applied: ${postValidationStats.fix16_split_multibulto} Split AC multi-bulto corrected`);
+    if (fix16_examples.length > 0) { console.log('[Stage8] Fix16 examples:'); fix16_examples.forEach(ex => console.log(`  ${ex}`)); }
+
+    // ---- Fix 15: FRIGO/LAVA alto parseado como 20.3cm en lugar de 203cm ----
+    const FIX15_FRIGO_REGEX = /\b(FRIGO|FRIGORIFICO|FRIGORÍFICO|NEVERA|COMBINADO|LAVADORA|SECADORA|LAVAVAJILLAS)\b/i;
+    const fix15_examples: string[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+      if (e.estimation_layer === 'erp_ground_truth') continue;  // ERP fiable
+      if (!FIX15_FRIGO_REGEX.test(pm.desc)) continue;
+      const altoCm: number | null = (products[i] as any).measures?.alto_cm ?? null;
+      if (altoCm === null || altoCm >= 50) continue;
+      const altoCorrected = altoCm * 10;
+      if (altoCorrected < 130 || altoCorrected > 230) continue;
+      // Recalculate volProducto with corrected alto
+      const anchoCm: number | null = (products[i] as any).measures?.ancho_cm ?? null;
+      const profCm: number | null = (products[i] as any).measures?.profundidad_cm ?? null;
+      if (!anchoCm || !profCm) continue;
+      if (anchoCm < 30 || profCm < 30) continue;  // otras dims también parecen estar en dm → skip
+      const vpCorregido = Math.round(anchoCm * altoCorrected * profCm / 1000000 * 10000) / 10000;
+      const best = getBestRatio(pm.subfL2, pm.subfL1, pm.tipo);
+      if (!best) continue;
+      const nuevoVol = Math.round(vpCorregido * best.r * 10000) / 10000;
+      const volOriginal = e.m3_logistico!;
+      e.m3_logistico = nuevoVol;
+      e.estimation_layer = 'dims_corregidas_fix15';
+      e.confidence = 0.45;
+      e.ratio_used = best.r;
+      e.ratio_source = `fix15:alto${altoCm}→${altoCorrected}cm,vp=${vpCorregido}`;
+      e.detail = `Fix15 alto parseado ${altoCm}→${altoCorrected}cm: vp=${vpCorregido}m³ × ${best.r} = ${nuevoVol}m³ (era ${volOriginal})`;
+      postValidationStats.fix15_frigo_alto_corrected++;
+      if (fix15_examples.length < 12) fix15_examples.push(`${pm.cod}: ${volOriginal}→${nuevoVol}m³ [alt=${altoCm}→${altoCorrected}] | ${pm.desc.substring(0, 55)}`);
+    }
+    console.log(`[Stage8] Fix15 applied: ${postValidationStats.fix15_frigo_alto_corrected} FRIGO/LAVA alto corrected`);
+    if (fix15_examples.length > 0) { console.log('[Stage8] Fix15 examples:'); fix15_examples.forEach(ex => console.log(`  ${ex}`)); }
+
+    // ---- Fix 14: Ratio mínimo físico 1.15 — embalaje siempre > producto (ÚLTIMO) ----
+    const fix14_examples: string[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+      if (e.estimation_layer === 'erp_ground_truth' || e.estimation_layer === 'gemini_embalaje') continue;
+      if (pm.tipo !== 'electrodomestico') continue;  // solo electros: muebles desmontables tienen ratio<1 legítimo
+      const vp = pm.volProducto;
+      if (!vp || vp < 0.01) continue;
+      if (EXCLUDE_FLAT_FIX.test(pm.desc)) continue;
+      if (e.m3_logistico === null || e.m3_logistico <= 0) continue;
+      const minVol = Math.round(vp * 1.15 * 10000) / 10000;
+      if (e.m3_logistico >= vp) continue;  // solo cuando embalaje < producto (imposible físicamente)
+      const volOriginal = e.m3_logistico;
+      e.m3_logistico = minVol;
+      e.estimation_layer = 'ratio_minimo_fisico_fix14';
+      e.confidence = 0.35;
+      e.ratio_used = 1.15;
+      e.ratio_source = 'fix14:min_ratio_1.15';
+      e.detail = `Fix14 VOL<vp×1.15: ${volOriginal}→${minVol}m³ (vp=${vp})`;
+      postValidationStats.fix14_ratio_minimo++;
+      if (fix14_examples.length < 12) fix14_examples.push(`${pm.cod}: ${volOriginal}→${minVol}m³ [vp=${vp}] | ${pm.desc.substring(0, 55)}`);
+    }
+    console.log(`[Stage8] Fix14 applied: ${postValidationStats.fix14_ratio_minimo} products ratio mínimo 1.15`);
+    if (fix14_examples.length > 0) { console.log('[Stage8] Fix14 examples:'); fix14_examples.forEach(ex => console.log(`  ${ex}`)); }
+
+    console.log(`[Stage8] Post-validation done: fix1=${postValidationStats.fix1_exterior_plegable}, fix2_nulled=${postValidationStats.fix2_electro_excessive_nulled}, fix2_cache=${postValidationStats.fix2_electro_excessive_from_cache}, fix3=${postValidationStats.fix3_mueble_tiny_corrected}, fix4=${postValidationStats.fix4_erp_placeholder_corrected}, fix5=${postValidationStats.fix5_dims_from_description}, fix7=${postValidationStats.fix7_residual_large_tiny}, fix8=${postValidationStats.fix8_composicion_ancho}, fix9=${postValidationStats.fix9_rango_fisico}, fix10=${postValidationStats.fix10_gemini_invalid}, fix11=${postValidationStats.fix11_ratio_too_big}, fix12=${postValidationStats.fix12_ratio_too_small}, fix13=${postValidationStats.fix13_bogal_erp_invalidated}, fix19=${postValidationStats.fix19_apple_vol_assigned}, fix18=${postValidationStats.fix18_erp_placeholder_extended}, fix17=${postValidationStats.fix17_silla_subfamilia}, fix16=${postValidationStats.fix16_split_multibulto}, fix15=${postValidationStats.fix15_frigo_alto_corrected}, fix14=${postValidationStats.fix14_ratio_minimo}`);
 
     // ==========================================
     // Summary
