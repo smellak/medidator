@@ -1403,7 +1403,7 @@ export async function executeStage8(jobId: string): Promise<void> {
     for (let i = 0; i < entries.length; i++) {
       const e = entries[i];
       const pm = productMeta[i];
-      if (e.estimation_layer === 'erp_ground_truth' || e.estimation_layer === 'gemini_embalaje') continue;
+      if (e.estimation_layer === 'erp_ground_truth' || e.estimation_layer === 'gemini_embalaje' || e.estimation_layer === 'rango_fisico_fix9') continue;
       if (pm.tipo !== 'electrodomestico') continue;  // solo electros: muebles desmontables tienen ratio<1 legítimo
       const vp = pm.volProducto;
       if (!vp || vp < 0.01) continue;
