@@ -119,9 +119,13 @@ validate_200.js         # Validation script: 200-product coherence check via Gem
      - **Fix 17 — Subfamilia 00001.00057 sillas vs sofás**: promedio_subfamilia con ancho < 90cm o keywords SILLA/TABURETE/BUTACA → asignar 0.20m³ en lugar de 0.88m³. estimation_layer='subfamilia_silla_fix17', confidence 0.40 (~110 productos). Capa 3.
      - **Fix 18 — ERP placeholder 0.01 ampliado**: como Fix4 pero threshold vp > 0.05m³ (era > 0.3m³), excluye accesorios y enrollables. estimation_layer='erp_placeholder_ampliado_fix18', confidence 0.40 (~12 productos). Mueve capa 1 → capa 3.
      - **Fix 19 — Apple products sin EAN**: proveedor 01172 con capa promedio/ratio → vol por keyword (IPAD→0.003, MACBOOK→0.012, IPHONE→0.0008, IMAC→0.035, etc). estimation_layer='vol_tipo_apple_fix19', confidence 0.50-0.55 (~352 productos). Capa 3.
+     - **Fix 20 — Dormitorios completos infraestimados**: "DORMITORIO COMPLETO"/"JUEGO DORMITORIO" con vol < 2.5 m³ (capas promedio) → 3.5 m³ (1.5 si "SIN ARMARIO"). estimation_layer='dormitorio_completo_fix20', confidence 0.30 (~17 productos). Capa 3.
+     - **Fix 21 — Composiciones supplier conocido vol < 0.5**: suppliers 00362/00300/04376/00010 + COMPOSICION + vol < 0.5 m³ (no ERP) → 1.5 m³ (2.0 si JORDAN EVO). estimation_layer='composicion_supplier_fix21', confidence 0.30 (~31 productos). Capa 3.
+     - **Fix 22 — Mesitas placeholder promedio**: MESITA/MESILLA + vol ≥ 0.50 m³ desde capa promedio, misma vol en ≥5 productos del mismo supplier → 0.10 m³ (o vp×1.2 si vp disponible). estimation_layer='mesita_corregida_fix22', confidence 0.35 (~20 productos). Capa 3.
+     - **Fix 23 — Electros grandes (150+ cm) infraestimados**: FRIGORIFICO/NEVERA/COMBINADO con altura ≥ 150 cm en descripción y vol < 0.60 m³ → vol basado en dims (ancho×altura×prof×1.15) o por tier (200+cm→0.85, 180+→0.75, 150+→0.65). Aplica a ERP cuando vol < 0.10 (físicamente imposible). estimation_layer='electro_grande_infraestimado_fix23', confidence 0.40 (~43 productos). Capa 3.
    - Sets job.status = 'completed' (stage8 is the completion gate)
-   - Coverage on real dataset: 100% (14,323/14,324), total 5,653.22 m³
-   - **Exhaustive audit (2026-04-20)**: 14,695 products, 1,347 errors (9.2%), 1,996 suspicious (13.6%). Fix13-19 improved 366/1,347 errors (27.2%), 1 worse.
+   - Coverage on real dataset: 100% (14,323/14,324), total 5,746.12 m³
+   - **Exhaustive audit (2026-04-20)**: 14,695 products, 1,347 errors (9.2%), 1,996 suspicious (13.6%). Fix13-23 improved 439/1,220 unique ERRORs (36.0%, +6% vs Fix13-19).
 
 ## Environment Variables
 
@@ -169,7 +173,7 @@ GEMINI_API_KEY=... node validate_200.js
 - **Coolify app UUID**: `wk8sggsg4koowwccssww4c4s`
 - **Domain**: `medidas.centrohogarsanchez.es`
 - **Docker**: Multi-stage build (deps → builder → runner), Node 20 Alpine
-- **Current container**: `wk8sggsg4koowwccssww4c4s-123842550377`
+- **Current container**: `wk8sggsg4koowwccssww4c4s-171705099445`
 
 ### Traefik ForwardAuth
 
