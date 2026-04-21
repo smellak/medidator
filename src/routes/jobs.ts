@@ -430,7 +430,7 @@ router.get('/:jobId/export', (req: Request, res: Response) => {
 
 // Catalog of available columns and how to extract them.
 // Each extractor receives the merged record { stage4: any, stage8: any, cod: string }.
-type ColumnExtractor = (r: { cod: string; s4: any; s8: any }) => any;
+type ColumnExtractor = (r: { cod: string; s4: any; s8: any; auditFlags?: Set<string> }) => any;
 const COLUMN_CATALOG: Record<string, ColumnExtractor> = {
   // Básicos
   COD_ARTICULO: ({ cod }) => cod,
@@ -487,6 +487,17 @@ const COLUMN_CATALOG: Record<string, ColumnExtractor> = {
     return Array.isArray(warnings) && warnings.length > 0 ? 'SI' : 'NO';
   },
   CATEGORY: ({ s4 }) => s4?.category ?? '',
+  // Fiabilidad del volumen logístico
+  FIABILIDAD: ({ s8, auditFlags, cod }) => {
+    const layer: string = s8?.estimation_layer ?? '';
+    const conf: number = s8?.confidence || 0;
+    if (layer === 'erp_ground_truth' && conf >= 0.95) return 'ALTA';
+    if (layer === 'gemini_embalaje' && conf >= 0.80) return 'ALTA';
+    if (auditFlags?.has(cod)) return 'REVISAR';
+    if (conf < 0.25) return 'REVISAR';
+    if (layer.includes('fix') && conf >= 0.45) return 'MEDIA';
+    return 'MEDIA';
+  },
 };
 
 const DEFAULT_COLUMNS = ['COD_ARTICULO', 'DESCRIPCION', 'VOLUMEN_PAQUETE_M3'];
@@ -541,6 +552,20 @@ router.get('/:jobId/export/custom', (req: Request, res: Response) => {
 
   // --- Load source data ---
   const DATA_DIR = path.resolve(process.cwd(), 'data');
+
+  // Load audit error flags for FIABILIDAD column (graceful — may not exist)
+  const auditErrorCods = new Set<string>();
+  const auditFile = path.join(DATA_DIR, 'audit_consolidated.json');
+  if (fs.existsSync(auditFile)) {
+    try {
+      const auditData = JSON.parse(fs.readFileSync(auditFile, 'utf-8'));
+      const anomalias = Array.isArray(auditData.anomalias) ? auditData.anomalias : [];
+      anomalias
+        .filter((a: any) => a.severidad === 'ERROR' || a.severidad === 'CRITICO')
+        .forEach((a: any) => { if (a.cod) auditErrorCods.add(String(a.cod)); });
+    } catch { /* ignore read errors */ }
+  }
+
   const stage8File = path.join(DATA_DIR, jobId, 'stage8_logistics.json');
   if (!fs.existsSync(stage8File)) {
     res.status(400).json({ error: 'Stage 8 (logística) no ejecutado. Ejecuta el pipeline completo primero.' });
@@ -605,7 +630,7 @@ router.get('/:jobId/export/custom', (req: Request, res: Response) => {
     const row: Record<string, any> = {};
     for (const col of columns) {
       const extractor = COLUMN_CATALOG[col];
-      const val = extractor({ cod, s4, s8 });
+      const val = extractor({ cod, s4, s8, auditFlags: auditErrorCods });
       row[col] = val;
     }
     rows.push(row);
@@ -701,9 +726,119 @@ router.get('/:jobId/export/columns', (_req: Request, res: Response) => {
       basicos: ['COD_ARTICULO', 'DESCRIPCION', 'FAMILIA', 'TIPO', 'EAN', 'PROVEEDOR', 'PROGRAMA', 'MARCA', 'LINEA'],
       medidas_producto: ['ANCHO_CM', 'ALTO_CM', 'PROFUNDIDAD_CM', 'VOLUMEN_PRODUCTO_M3', 'PESO_NETO_KG', 'PESO_BRUTO_KG'],
       logistica: ['VOLUMEN_PAQUETE_M3', 'BULTOS', 'CAPA', 'CONFIDENCE', 'ESTIMATION_SOURCE'],
-      calidad: ['PARSE_CONFIDENCE', 'SOURCE', 'COMPOSITE', 'NUM_COMPONENTS', 'OUTLIER_WARNING', 'CATEGORY'],
+      calidad: ['PARSE_CONFIDENCE', 'SOURCE', 'COMPOSITE', 'NUM_COMPONENTS', 'OUTLIER_WARNING', 'CATEGORY', 'FIABILIDAD'],
     },
   });
+});
+
+// GET /jobs/:jobId/export/audit-report — lista de trabajo para Pipa (CSV productos con ERROR)
+router.get('/:jobId/export/audit-report', (req: Request, res: Response) => {
+  const { jobId } = req.params;
+  const DATA_DIR = path.resolve(process.cwd(), 'data');
+
+  // Load audit consolidated
+  const auditFile = path.join(DATA_DIR, 'audit_consolidated.json');
+  if (!fs.existsSync(auditFile)) {
+    res.status(404).json({ error: 'audit_consolidated.json not found in data/. Run the audit first.' });
+    return;
+  }
+  const auditData = JSON.parse(fs.readFileSync(auditFile, 'utf-8'));
+  const errorsRaw: any[] = (auditData.anomalias || []).filter((a: any) =>
+    a.severidad === 'ERROR' || a.severidad === 'CRITICO'
+  );
+  // Deduplicate by COD: keep highest confianza_audit
+  const errorsByCod = new Map<string, any>();
+  for (const a of errorsRaw) {
+    const cod = String(a.cod || '');
+    const existing = errorsByCod.get(cod);
+    if (!existing || (a.confianza_audit || 0) > (existing.confianza_audit || 0)) {
+      errorsByCod.set(cod, a);
+    }
+  }
+  const errors = Array.from(errorsByCod.values());
+
+  // Load current stage8 for actual volumes (post Fix13-19)
+  const stage8File = path.join(DATA_DIR, jobId, 'stage8_logistics.json');
+  if (!fs.existsSync(stage8File)) {
+    res.status(400).json({ error: 'Stage 8 no ejecutado para este job.' });
+    return;
+  }
+  const stage8Data = JSON.parse(fs.readFileSync(stage8File, 'utf-8'));
+  const currentVols: Record<string, number | null> = {};
+  const currentLayers: Record<string, string> = {};
+  for (const p of (stage8Data.products || [])) {
+    const cod = String(p['COD.ARTICULO'] || '');
+    currentVols[cod] = p.m3_logistico ?? null;
+    currentLayers[cod] = p.estimation_layer ?? '';
+  }
+
+  // Load descriptions from stage4 or stage1
+  const descMap: Record<string, string> = {};
+  const stage4File = path.join(DATA_DIR, jobId, 'stage4_enriched.json');
+  const stage1File = path.join(DATA_DIR, jobId, 'stage1_base.json');
+  if (fs.existsSync(stage4File)) {
+    const s4d = JSON.parse(fs.readFileSync(stage4File, 'utf-8'));
+    for (const p of (s4d.products || [])) {
+      const cod = String(p['COD.ARTICULO'] || '');
+      if (cod) descMap[cod] = String(p.original?.['Descripcion del proveedor'] || '');
+    }
+  } else if (fs.existsSync(stage1File)) {
+    const s1rows = JSON.parse(fs.readFileSync(stage1File, 'utf-8'));
+    for (const r of (Array.isArray(s1rows) ? s1rows : [])) {
+      const cod = String(r['COD.ARTICULO'] || '');
+      if (cod) descMap[cod] = String(r['Descripcion del proveedor'] || '');
+    }
+  }
+
+  const sanitize = (s: string) => String(s || '').replace(/[\r\n]+/g, ' ').trim();
+
+  const suggestFix = (razon: string): string => {
+    const r = (razon || '').toLowerCase();
+    if (r.includes('erp') && (r.includes('placeholder') || r.includes('0.01'))) return 'Corregir M3 en ERP (valor placeholder)';
+    if (r.includes('erp') && (r.includes('dm') || r.includes('unidades'))) return 'Corregir unidades M3 en ERP';
+    if (r.includes('erp') && r.includes('ratio')) return 'Verificar M3 ERP con proveedor';
+    if (r.includes('promedio subfamilia') || r.includes('subfamilia contaminad')) return 'Medir dims producto para ratio propio';
+    if (r.includes('parseo') || (r.includes('dims') && !r.includes('erp'))) return 'Verificar dims en HTML/ficha producto';
+    if (r.includes('ratio') && r.includes('< 0.8')) return 'Embalaje<producto: revisar ERP M3';
+    if (r.includes('split') || r.includes('bulto')) return 'Verificar dims unidad exterior SPLIT';
+    if (r.includes('tablet') || r.includes('ipad') || r.includes('apple')) return 'Confirmar vol embalaje Apple con proveedor';
+    if (r.includes('gemini')) return 'Verificar dims embalaje en ficha/tienda';
+    return 'Revisar y corregir M3 manualmente';
+  };
+
+  const headers = ['COD_ARTICULO', 'DESCRIPCION', 'VOLUMEN_ACTUAL_M3', 'VOLUMEN_AUDITADO_M3', 'VOLUMEN_ESPERADO_MIN', 'VOLUMEN_ESPERADO_MAX', 'SEVERIDAD', 'RAZON', 'FIX_SUGERIDO'];
+  const csvRows = [headers.join(';')];
+
+  for (const a of errors) {
+    const cod = String(a.cod || '');
+    const desc = sanitize(descMap[cod] || a.desc_corta || '');
+    const volActual = currentVols[cod] != null ? currentVols[cod] : '';
+    const volAuditado = a.VOL != null ? a.VOL : '';
+    const volEsperado: number | null = a.VOL_esperado ?? null;
+    const volMin = volEsperado != null ? Math.round(volEsperado * 0.75 * 10000) / 10000 : '';
+    const volMax = volEsperado != null ? Math.round(volEsperado * 1.40 * 10000) / 10000 : '';
+    const sev = a.severidad || 'ERROR';
+    const razon = sanitize(a.razon || '');
+    const fix = suggestFix(a.razon || '');
+
+    const row = [
+      `="${cod}"`,
+      `"${desc.replace(/"/g, '""')}"`,
+      volActual,
+      volAuditado,
+      volMin,
+      volMax,
+      sev,
+      `"${razon.replace(/"/g, '""')}"`,
+      `"${fix.replace(/"/g, '""')}"`,
+    ].join(';');
+    csvRows.push(row);
+  }
+
+  const csv = csvRows.join('\r\n');
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="medidator_${jobId}_audit_report.csv"`);
+  res.send('\uFEFF' + csv);  // BOM UTF-8 para Excel ES
 });
 
 export { router as jobsRouter };

@@ -59,6 +59,7 @@ const COLUMN_GROUPS: ColumnGroup[] = [
       { id: 'NUM_COMPONENTS', label: 'NUM_COMPONENTS' },
       { id: 'OUTLIER_WARNING', label: 'OUTLIER_WARNING (SI/NO)' },
       { id: 'CATEGORY', label: 'CATEGORY' },
+      { id: 'FIABILIDAD', label: 'FIABILIDAD (ALTA/MEDIA/REVISAR)' },
     ],
   },
 ];
@@ -75,6 +76,10 @@ const PRESETS: Record<string, { label: string; columns: string[] }> = {
   measures: {
     label: 'Medidas producto',
     columns: ['COD_ARTICULO', 'DESCRIPCION', 'ANCHO_CM', 'ALTO_CM', 'PROFUNDIDAD_CM', 'VOLUMEN_PRODUCTO_M3'],
+  },
+  alerts: {
+    label: 'Logística con alertas',
+    columns: ['COD_ARTICULO', 'DESCRIPCION', 'VOLUMEN_PAQUETE_M3', 'FIABILIDAD'],
   },
   all: {
     label: 'Todo',
