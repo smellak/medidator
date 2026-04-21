@@ -53,6 +53,7 @@ data/                   # Pipeline output + caches
   ean_packaging_cache.json # Gemini packaging EAN cache (~2233 entries, stage8)
   ground_truth_logistics.json # 3,118 products with ERP M3 ground truth
   ratios_calibracion.json # Calibration ratios by subfamilia/tipo
+  audit_consolidated.json # 1,347 error anomalies from exhaustive audit (14,695 products, 2026-04-21)
   <jobId>/              # Per-job stage outputs (stage1_base.json ... stage8_logistics.json)
 
 e2e/                    # Playwright E2E tests (38 specs)
@@ -80,8 +81,9 @@ validate_200.js         # Validation script: 200-product coherence check via Gem
 | POST | `/jobs/:id/run` | Run full 8-stage pipeline (skips already-completed stages) |
 | GET | `/jobs/:id/export?format=csv\|json` | Export job results (legacy: full product dump) |
 | GET | `/jobs/:id/export?format=csv&type=logistics` | 5-col logistics CSV (COD,DESC,VOL,CONFIDENCE,CAPA), `COD_ARTICULO` as `="..."` text |
-| GET | `/jobs/:id/export/custom?columns=...&format=csv\|xlsx` | Configurable export with column selector + filters |
+| GET | `/jobs/:id/export/custom?columns=...&format=csv\|xlsx` | Configurable export with column selector + filters (27 cols incl. FIABILIDAD) |
 | GET | `/jobs/:id/export/columns` | List of available columns and groups for custom export |
+| GET | `/jobs/:id/export/audit-report` | CSV lista de trabajo: 1,220 ERROREs únicos con VOL_ACTUAL, VOL_ESPERADO_MIN/MAX, FIX_SUGERIDO |
 | POST | `/api/agent` | CHS Platform agent endpoint (7 capabilities) |
 
 ## Pipeline Stages (all implemented)
@@ -209,7 +211,7 @@ grep -rn "AIzaSy\|sk-ant-api\|ghp_" . --include="*.ts" --include="*.js" | grep -
 npx vite build
 
 # 3. Commit & push
-git add src/ dist-ui/ data/ean_cache.json data/ean_packaging_cache.json data/ground_truth_logistics.json data/ratios_calibracion.json
+git add src/ dist-ui/ data/ean_cache.json data/ean_packaging_cache.json data/ground_truth_logistics.json data/ratios_calibracion.json data/audit_consolidated.json
 git commit -m "description"
 source ~/.env && git push https://${GITHUB_TOKEN}@github.com/smellak/medidator.git main
 
@@ -236,17 +238,23 @@ Configurable export endpoint that lets the user pick exactly which columns and f
   - XLSX: `COD_ARTICULO` cells written as `{ t: 's', v: ..., z: '@' }` (text type) so leading zeros survive
   - Auto column widths in xlsx
 - **Listing endpoint**: `GET /jobs/:jobId/export/columns` returns the catalog (columns, default, groups)
-- **26 columns in 4 groups** (defined in `COLUMN_CATALOG` in `src/routes/jobs.ts`):
+- **27 columns in 4 groups** (defined in `COLUMN_CATALOG` in `src/routes/jobs.ts`):
   - **Datos básicos** (9): COD_ARTICULO (always), DESCRIPCION, FAMILIA, TIPO, EAN, PROVEEDOR, PROGRAMA, MARCA, LINEA
   - **Medidas de producto** (6): ANCHO_CM, ALTO_CM, PROFUNDIDAD_CM, VOLUMEN_PRODUCTO_M3, PESO_NETO_KG, PESO_BRUTO_KG
   - **Logística** (5): VOLUMEN_PAQUETE_M3, BULTOS, CAPA, CONFIDENCE, ESTIMATION_SOURCE
-  - **Calidad** (6): PARSE_CONFIDENCE, SOURCE, COMPOSITE, NUM_COMPONENTS, OUTLIER_WARNING, CATEGORY
+  - **Calidad** (7): PARSE_CONFIDENCE, SOURCE, COMPOSITE, NUM_COMPONENTS, OUTLIER_WARNING, CATEGORY, FIABILIDAD
 - **Frontend**: `client/components/ExportDialog.tsx` — modal launched from `JobDetail` ("Exportar personalizado" button, only visible when stage 8 is success)
   - Checkboxes per column group, COD_ARTICULO always selected/disabled
-  - 4 presets: `basic` (3 cols), `full` (logística completa), `measures` (medidas producto), `all` (todas)
+  - 5 presets: `basic` (3 cols), `full` (logística completa), `measures` (medidas producto), `alerts` (logística con alertas: COD+DESC+VOL+FIABILIDAD), `all` (todas)
   - Filters: capa dropdown, confidence slider (0-1, step 0.05), tipo dropdown
   - CSV/XLSX format selector with icons
   - Live URL preview in footer
+- **FIABILIDAD field logic**: ALTA (ERP≥0.95 or Gemini≥0.80) | REVISAR (in auditFlags or conf<0.25) | MEDIA (everything else)
+  - `auditFlags`: Set of COD_ARTICULOs from `audit_consolidated.json` with ERROR/CRITICO severity (1,220 unique CODs)
+- **Audit-report endpoint**: `GET /jobs/:id/export/audit-report` — CSV semicolon-separated (BOM UTF-8 for Excel ES):
+  - 9 columns: COD_ARTICULO, DESCRIPCION, VOLUMEN_ACTUAL_M3, VOLUMEN_AUDITADO_M3, VOLUMEN_ESPERADO_MIN, VOLUMEN_ESPERADO_MAX, SEVERIDAD, RAZON, FIX_SUGERIDO
+  - 1,220 rows (deduplicated by highest confianza_audit per COD)
+  - FIX_SUGERIDO: human-readable suggestion derived from RAZON keywords
 
 ## Caches & Static Data
 
@@ -254,6 +262,7 @@ Configurable export endpoint that lets the user pick exactly which columns and f
 - **`data/ean_packaging_cache.json`**: ~2233 packaging EAN lookups (stage8, embalaje dimensions, 99.5% hit rate)
 - **`data/ground_truth_logistics.json`**: 3,118 products with ERP M3 ground truth (static reference)
 - **`data/ratios_calibracion.json`**: Calibration ratios product→package by subfamilia/tipo (static reference)
+- **`data/audit_consolidated.json`**: 1,347 ERROR anomalies from exhaustive audit (14,695 products, 2026-04-21). Used by `/export/audit-report` and FIABILIDAD column. 1,220 unique CODs after deduplication.
 - All baked into Docker image via `COPY data/ ./data/` — survives rebuilds
 - **No persistent volume** — runtime cache additions are lost on container restart
 - Only electrodomésticos are queried for EAN (mueble EANs are unreliable)
