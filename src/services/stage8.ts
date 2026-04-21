@@ -13,7 +13,7 @@ const BATCH_SIZE = 5;
 const BATCH_DELAY_MS = 1000;
 const SAVE_EVERY = 50;
 
-type EstimationLayer = 'erp_ground_truth' | 'gemini_embalaje' | 'ratio_subfamilia' | 'ratio_tipo' | 'promedio_subfamilia' | 'promedio_tipo' | 'promedio_subfamilia_corregido' | 'ratio_subfamilia_corregido_fix4' | 'ratio_desde_descripcion_fix5' | 'ratio_residual_fix7' | 'ratio_composicion_ancho_fix8' | 'ratio_subfamilia_fix10_gemini_invalid' | 'ratio_subfamilia_fix11_too_big' | 'ratio_subfamilia_fix12_too_small' | 'rango_fisico_fix9' | 'erp_bogal_dm3_fix13' | 'vol_tipo_apple_fix19' | 'erp_placeholder_ampliado_fix18' | 'subfamilia_silla_fix17' | 'multiplicador_bultos_fix16' | 'dims_corregidas_fix15' | 'ratio_minimo_fisico_fix14' | 'none';
+type EstimationLayer = 'erp_ground_truth' | 'gemini_embalaje' | 'ratio_subfamilia' | 'ratio_tipo' | 'promedio_subfamilia' | 'promedio_tipo' | 'promedio_subfamilia_corregido' | 'ratio_subfamilia_corregido_fix4' | 'ratio_desde_descripcion_fix5' | 'ratio_residual_fix7' | 'ratio_composicion_ancho_fix8' | 'ratio_subfamilia_fix10_gemini_invalid' | 'ratio_subfamilia_fix11_too_big' | 'ratio_subfamilia_fix12_too_small' | 'rango_fisico_fix9' | 'erp_bogal_dm3_fix13' | 'vol_tipo_apple_fix19' | 'erp_placeholder_ampliado_fix18' | 'subfamilia_silla_fix17' | 'multiplicador_bultos_fix16' | 'dims_corregidas_fix15' | 'ratio_minimo_fisico_fix14' | 'dormitorio_completo_fix20' | 'composicion_supplier_fix21' | 'mesita_corregida_fix22' | 'electro_grande_infraestimado_fix23' | 'none';
 
 interface LogisticsEntry {
   'COD.ARTICULO': string;
@@ -550,6 +550,10 @@ export async function executeStage8(jobId: string): Promise<void> {
       fix16_split_multibulto: 0,
       fix15_frigo_alto_corrected: 0,
       fix14_ratio_minimo: 0,
+      fix20_dormitorio_completo: 0,
+      fix21_composicion_supplier: 0,
+      fix22_mesita_corregida: 0,
+      fix23_electro_grande: 0,
     };
 
     const EXTERIOR_REGEX = /\b(PARASOL|PERGOLA|PÉRGOLA|CENADOR|GAZEBO|CARPA|TOLDO)\b/i;
@@ -1424,7 +1428,174 @@ export async function executeStage8(jobId: string): Promise<void> {
     console.log(`[Stage8] Fix14 applied: ${postValidationStats.fix14_ratio_minimo} products ratio mínimo 1.15`);
     if (fix14_examples.length > 0) { console.log('[Stage8] Fix14 examples:'); fix14_examples.forEach(ex => console.log(`  ${ex}`)); }
 
-    console.log(`[Stage8] Post-validation done: fix1=${postValidationStats.fix1_exterior_plegable}, fix2_nulled=${postValidationStats.fix2_electro_excessive_nulled}, fix2_cache=${postValidationStats.fix2_electro_excessive_from_cache}, fix3=${postValidationStats.fix3_mueble_tiny_corrected}, fix4=${postValidationStats.fix4_erp_placeholder_corrected}, fix5=${postValidationStats.fix5_dims_from_description}, fix7=${postValidationStats.fix7_residual_large_tiny}, fix8=${postValidationStats.fix8_composicion_ancho}, fix9=${postValidationStats.fix9_rango_fisico}, fix10=${postValidationStats.fix10_gemini_invalid}, fix11=${postValidationStats.fix11_ratio_too_big}, fix12=${postValidationStats.fix12_ratio_too_small}, fix13=${postValidationStats.fix13_bogal_erp_invalidated}, fix19=${postValidationStats.fix19_apple_vol_assigned}, fix18=${postValidationStats.fix18_erp_placeholder_extended}, fix17=${postValidationStats.fix17_silla_subfamilia}, fix16=${postValidationStats.fix16_split_multibulto}, fix15=${postValidationStats.fix15_frigo_alto_corrected}, fix14=${postValidationStats.fix14_ratio_minimo}`);
+    // ---- Fix 20: Dormitorios completos infraestimados ----
+    // "DORMITORIO COMPLETO" con vol < 2.5 m³ desde capas promedio → mínimo 3.5 m³ (1.5 si SIN ARMARIO)
+    const FIX20_DORM_REGEX = /\b(DORMITORIO COMPLETO|DORMITORIO JUVENIL COMPLETO|JUEGO DORMITORIO|COMPOSICION DORMITORIO COMPLETA)\b/i;
+    const FIX20_SIN_ARMARIO_REGEX = /\bSIN ARMARIO\b/i;
+    const FIX20_SKIP_LAYERS = new Set<EstimationLayer>(['erp_ground_truth', 'gemini_embalaje']);
+    const fix20_examples: string[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+      if (FIX20_SKIP_LAYERS.has(e.estimation_layer as EstimationLayer)) continue;
+      if (!FIX20_DORM_REGEX.test(pm.desc)) continue;
+      if (e.m3_logistico === null || e.m3_logistico >= 2.5) continue;
+      const sinArmario = FIX20_SIN_ARMARIO_REGEX.test(pm.desc);
+      const targetVol = sinArmario ? 1.5 : 3.5;
+      const volOriginal = e.m3_logistico;
+      e.m3_logistico = targetVol;
+      e.estimation_layer = 'dormitorio_completo_fix20';
+      e.confidence = 0.30;
+      e.ratio_used = null;
+      e.ratio_source = `fix20:dormitorio_completo${sinArmario ? '_sin_armario' : ''}`;
+      e.detail = `Fix20 dormitorio completo: ${volOriginal}→${targetVol}m³${sinArmario ? ' (sin armario)' : ''}`;
+      postValidationStats.fix20_dormitorio_completo++;
+      if (fix20_examples.length < 12) fix20_examples.push(`${pm.cod}: ${volOriginal}→${targetVol}m³ | ${pm.desc.substring(0, 60)}`);
+    }
+    console.log(`[Stage8] Fix20 applied: ${postValidationStats.fix20_dormitorio_completo} dormitorios completos corregidos`);
+    if (fix20_examples.length > 0) { console.log('[Stage8] Fix20 examples:'); fix20_examples.forEach(ex => console.log(`  ${ex}`)); }
+
+    // ---- Fix 21: Composiciones de proveedor conocido con vol < 0.5 m³ ----
+    // Proveedores de salón/dormitorio cuyo ratio está subestimado para composiciones
+    const FIX21_SUPPLIERS = new Set(['00362', '00300', '04376', '00010']);
+    const FIX21_COMP_REGEX = /\bCOMPOSICIO[NÓ]N?\b/i;
+    const FIX21_JORDAN_EVO_REGEX = /\bJORDAN EVO\b/i;
+    const FIX21_SKIP_LAYERS = new Set<EstimationLayer>([
+      'erp_ground_truth', 'gemini_embalaje',
+      'ratio_composicion_ancho_fix8', 'ratio_residual_fix7', 'dormitorio_completo_fix20',
+    ]);
+    const fix21_examples: string[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+      if (FIX21_SKIP_LAYERS.has(e.estimation_layer as EstimationLayer)) continue;
+      // Supplier check
+      const suppKey = pm.cod.substring(0, 5);
+      if (!FIX21_SUPPLIERS.has(suppKey)) continue;
+      if (!FIX21_COMP_REGEX.test(pm.desc)) continue;
+      if (e.m3_logistico === null || e.m3_logistico >= 0.5) continue;
+      // Jordan EVO composiciones: típicamente dormitorio con cabezal+cama+mesitas → 2.0 m³
+      const isJordanEvo = FIX21_JORDAN_EVO_REGEX.test(pm.desc);
+      const targetVol = isJordanEvo ? 2.0 : 1.5;
+      const volOriginal = e.m3_logistico;
+      e.m3_logistico = targetVol;
+      e.estimation_layer = 'composicion_supplier_fix21';
+      e.confidence = 0.30;
+      e.ratio_used = null;
+      e.ratio_source = `fix21:supplier_${suppKey}${isJordanEvo ? '_jordan_evo' : ''}`;
+      e.detail = `Fix21 composicion supplier ${suppKey}${isJordanEvo ? ' JORDAN EVO' : ''}: ${volOriginal}→${targetVol}m³`;
+      postValidationStats.fix21_composicion_supplier++;
+      if (fix21_examples.length < 12) fix21_examples.push(`${pm.cod}: ${volOriginal}→${targetVol}m³ | ${pm.desc.substring(0, 60)}`);
+    }
+    console.log(`[Stage8] Fix21 applied: ${postValidationStats.fix21_composicion_supplier} composiciones supplier corregidas`);
+    if (fix21_examples.length > 0) { console.log('[Stage8] Fix21 examples:'); fix21_examples.forEach(ex => console.log(`  ${ex}`)); }
+
+    // ---- Fix 22: Mesitas con vol placeholder alto desde promedio subfamilia ----
+    // MESITA/MESILLA con vol >= 0.50 m³ desde capa promedio → imposible físicamente,
+    // suele ser el promedio de la subfamilia dominado por camas/armarios.
+    // Aplica cuando el mismo vol aparece >= 5 veces en el mismo proveedor (placeholder claro).
+    const FIX22_MESITA_REGEX = /\b(MESITA|MESILLA)\b/i;
+    const FIX22_PROMEDIO_LAYERS = new Set<EstimationLayer>([
+      'promedio_subfamilia', 'promedio_subfamilia_corregido', 'promedio_tipo',
+    ]);
+    // Build per-supplier vol-frequency map for mesitas
+    const mesitaSupplierVol: Record<string, Record<string, number>> = {};
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+      if (!FIX22_MESITA_REGEX.test(pm.desc)) continue;
+      if (!FIX22_PROMEDIO_LAYERS.has(e.estimation_layer as EstimationLayer)) continue;
+      if (e.m3_logistico === null || e.m3_logistico < 0.50) continue;
+      const suppKey = pm.cod.substring(0, 5);
+      const volKey = String(e.m3_logistico);
+      if (!mesitaSupplierVol[suppKey]) mesitaSupplierVol[suppKey] = {};
+      mesitaSupplierVol[suppKey][volKey] = (mesitaSupplierVol[suppKey][volKey] || 0) + 1;
+    }
+    // Find placeholder vols: same vol >= 5 times per supplier
+    const fix22PlaceholderVols: Set<string> = new Set();  // "suppKey:volKey"
+    for (const [suppKey, volMap] of Object.entries(mesitaSupplierVol)) {
+      for (const [volKey, count] of Object.entries(volMap)) {
+        if (count >= 5) fix22PlaceholderVols.add(`${suppKey}:${volKey}`);
+      }
+    }
+    const fix22_examples: string[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+      if (!FIX22_MESITA_REGEX.test(pm.desc)) continue;
+      if (!FIX22_PROMEDIO_LAYERS.has(e.estimation_layer as EstimationLayer)) continue;
+      if (e.m3_logistico === null || e.m3_logistico < 0.50) continue;
+      const suppKey = pm.cod.substring(0, 5);
+      const volKey = String(e.m3_logistico);
+      if (!fix22PlaceholderVols.has(`${suppKey}:${volKey}`)) continue;
+      // Target vol: use vol_producto × 1.2 if available and reasonable, else 0.10 m³
+      const vp = pm.volProducto;
+      const nuevoVol = (vp && vp > 0.01 && vp < 0.20) ? Math.round(vp * 1.2 * 10000) / 10000 : 0.10;
+      const volOriginal = e.m3_logistico;
+      e.m3_logistico = nuevoVol;
+      e.estimation_layer = 'mesita_corregida_fix22';
+      e.confidence = 0.35;
+      e.ratio_used = null;
+      e.ratio_source = `fix22:mesita_placeholder_${suppKey}_vol${volKey}`;
+      e.detail = `Fix22 mesita placeholder ${volKey}m³ (supp ${suppKey}): →${nuevoVol}m³ (vp=${vp})`;
+      postValidationStats.fix22_mesita_corregida++;
+      if (fix22_examples.length < 12) fix22_examples.push(`${pm.cod}: ${volOriginal}→${nuevoVol}m³ [vp=${vp}] | ${pm.desc.substring(0, 55)}`);
+    }
+    console.log(`[Stage8] Fix22 applied: ${postValidationStats.fix22_mesita_corregida} mesitas placeholder corregidas`);
+    if (fix22_examples.length > 0) { console.log('[Stage8] Fix22 examples:'); fix22_examples.forEach(ex => console.log(`  ${ex}`)); }
+
+    // ---- Fix 23: Electrodomésticos grandes (170+ cm) con vol infraestimado ----
+    // FRIGO/NEVERA/COMBINADO con altura ≥ 170 cm en descripción y vol < 0.60 m³.
+    // Los frigos 200cm necesitan ~0.80-1.00 m³; Fix9 los capó a min=0.35 pero es insuficiente.
+    // También cubre ERP corrupto (vol=0.028 imposible para fridge 173cm).
+    const FIX23_ELECTRO_REGEX = /\b(FRIGORIFICO|FRIGORÍFICO|NEVERA|COMBINADO|AMERICANO)\b/i;
+    const FIX23_HEIGHT_REGEX = /(?<!\d)(1[5-9]\d|2[0-3]\d)(?!\d)/;
+    const fix23_examples: string[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+      if (!FIX23_ELECTRO_REGEX.test(pm.desc)) continue;
+      if (e.m3_logistico === null) continue;
+      // Skip ERP unless clearly impossible (< 0.10 m³ for 170+ cm appliance)
+      if (e.estimation_layer === 'erp_ground_truth' && e.m3_logistico >= 0.10) continue;
+      if (e.m3_logistico >= 0.60) continue;
+      // Extract height from description
+      const heightMatch = pm.desc.match(FIX23_HEIGHT_REGEX);
+      if (!heightMatch) continue;
+      const heightCm = parseInt(heightMatch[1]);
+      if (heightCm < 150) continue;
+      // Get product measures for dimension-based calculation
+      const anchoCm: number | null = (products[i] as any).measures?.ancho_cm ?? null;
+      const profCm: number | null = (products[i] as any).measures?.profundidad_cm ?? null;
+      let nuevoVol: number;
+      if (anchoCm && anchoCm > 50 && profCm && profCm > 50) {
+        // Both measures look like a real fridge (not tiny/wrong): compute from corrected dims
+        const vpCorr = Math.round(anchoCm * heightCm * profCm / 1000000 * 10000) / 10000;
+        nuevoVol = Math.round(vpCorr * 1.15 * 10000) / 10000;
+      } else {
+        // Default by height tier: 200+cm → 0.85, 180-199cm → 0.75, 150-179cm → 0.65
+        nuevoVol = heightCm >= 200 ? 0.85 : heightCm >= 180 ? 0.75 : 0.65;
+      }
+      nuevoVol = Math.max(0.60, Math.min(1.20, nuevoVol));
+      const volOriginal = e.m3_logistico;
+      // Update layer counters
+      const oldLayer = e.estimation_layer;
+      const oldKey = oldLayer as keyof typeof layerCounts;
+      if (layerCounts[oldKey] !== undefined && layerCounts[oldKey] > 0) layerCounts[oldKey]--;
+      layerCounts.ratio_subfamilia = (layerCounts.ratio_subfamilia || 0) + 1;
+      e.m3_logistico = nuevoVol;
+      e.estimation_layer = 'electro_grande_infraestimado_fix23';
+      e.confidence = 0.40;
+      e.ratio_used = null;
+      e.ratio_source = `fix23:frigo_h${heightCm}cm_a${anchoCm}cm_p${profCm}cm`;
+      e.detail = `Fix23 electro grande h=${heightCm}cm: ${volOriginal}→${nuevoVol}m³`;
+      postValidationStats.fix23_electro_grande++;
+      if (fix23_examples.length < 12) fix23_examples.push(`${pm.cod}: ${volOriginal}→${nuevoVol}m³ [h=${heightCm}cm] | ${pm.desc.substring(0, 60)}`);
+    }
+    console.log(`[Stage8] Fix23 applied: ${postValidationStats.fix23_electro_grande} electros grandes infraestimados corregidos`);
+    if (fix23_examples.length > 0) { console.log('[Stage8] Fix23 examples:'); fix23_examples.forEach(ex => console.log(`  ${ex}`)); }
+
+    console.log(`[Stage8] Post-validation done: fix1=${postValidationStats.fix1_exterior_plegable}, fix2_nulled=${postValidationStats.fix2_electro_excessive_nulled}, fix2_cache=${postValidationStats.fix2_electro_excessive_from_cache}, fix3=${postValidationStats.fix3_mueble_tiny_corrected}, fix4=${postValidationStats.fix4_erp_placeholder_corrected}, fix5=${postValidationStats.fix5_dims_from_description}, fix7=${postValidationStats.fix7_residual_large_tiny}, fix8=${postValidationStats.fix8_composicion_ancho}, fix9=${postValidationStats.fix9_rango_fisico}, fix10=${postValidationStats.fix10_gemini_invalid}, fix11=${postValidationStats.fix11_ratio_too_big}, fix12=${postValidationStats.fix12_ratio_too_small}, fix13=${postValidationStats.fix13_bogal_erp_invalidated}, fix19=${postValidationStats.fix19_apple_vol_assigned}, fix18=${postValidationStats.fix18_erp_placeholder_extended}, fix17=${postValidationStats.fix17_silla_subfamilia}, fix16=${postValidationStats.fix16_split_multibulto}, fix15=${postValidationStats.fix15_frigo_alto_corrected}, fix14=${postValidationStats.fix14_ratio_minimo}, fix20=${postValidationStats.fix20_dormitorio_completo}, fix21=${postValidationStats.fix21_composicion_supplier}, fix22=${postValidationStats.fix22_mesita_corregida}, fix23=${postValidationStats.fix23_electro_grande}`);
 
     // ==========================================
     // Summary
