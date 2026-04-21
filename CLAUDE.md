@@ -110,8 +110,16 @@ validate_200.js         # Validation script: 200-product coherence check via Gem
      - **Fix 10 — Gemini embalaje = producto**: layer='gemini_embalaje' con ratio vol_logístico/vol_producto < 1.2 y vol_producto entre 0.005-2.0 m³ → Gemini dio dims del producto no del embalaje → recalcular con ratio_subfamilia. estimation_layer='ratio_subfamilia_fix10_gemini_invalid', confidence 0.40 (~556 productos). Capa 3.
      - **Fix 11 — paquete imposiblemente grande**: ratio > 12× cuando vol_producto > 0.05 m³, no large electro, no ERP → cap a vol_producto × 5. estimation_layer='ratio_subfamilia_fix11_too_big', confidence 0.35 (~2 productos). Capa 3.
      - **Fix 12 — paquete imposiblemente pequeño**: ratio < 0.05× (embalaje < 5% del producto) cuando vol_producto entre 0.005-2.0 m³, no flat, no ERP=0.01 → recalcular con ratio_subfamilia. estimation_layer='ratio_subfamilia_fix12_too_small', confidence 0.40 (~7 productos). Capa 3.
+     - **Fix 13 — ERP BOGAL en dm³**: proveedor 00362 con ERP/vp < 0.08 o > 10 → invalidar ERP, usar ratio_subfamilia. estimation_layer='erp_bogal_dm3_fix13', confidence 0.40 (~230 productos). Mueve capa 1 → capa 3.
+     - **Fix 14 — ratio mínimo 1.15 para electros**: electrodomésticos (no ERP, no Gemini, no Fix9) con VOL < vol_producto → forzar VOL = vp × 1.15. estimation_layer='ratio_minimo_fisico_fix14', confidence 0.35 (~4 productos). Capa 3.
+     - **Fix 15 — FRIGO/LAVA alto en cm parseado como dm**: alto < 50cm, alto×10 entre 130-230cm, ancho/prof > 30cm → recalcular vp con alto corregido × ratio. estimation_layer='dims_corregidas_fix15', confidence 0.45 (~71 productos). Capa 3.
+     - **Fix 16 — Split AC multi-bulto**: SPLIT con bultos ≥ 2 (no ERP) → VOL × 1.8 (2 bultos) o × 2.5 (3+). estimation_layer='multiplicador_bultos_fix16', confidence 0.45 (~15 productos). Capa 3.
+     - **Fix 17 — Subfamilia 00001.00057 sillas vs sofás**: promedio_subfamilia con ancho < 90cm o keywords SILLA/TABURETE/BUTACA → asignar 0.20m³ en lugar de 0.88m³. estimation_layer='subfamilia_silla_fix17', confidence 0.40 (~110 productos). Capa 3.
+     - **Fix 18 — ERP placeholder 0.01 ampliado**: como Fix4 pero threshold vp > 0.05m³ (era > 0.3m³), excluye accesorios y enrollables. estimation_layer='erp_placeholder_ampliado_fix18', confidence 0.40 (~12 productos). Mueve capa 1 → capa 3.
+     - **Fix 19 — Apple products sin EAN**: proveedor 01172 con capa promedio/ratio → vol por keyword (IPAD→0.003, MACBOOK→0.012, IPHONE→0.0008, IMAC→0.035, etc). estimation_layer='vol_tipo_apple_fix19', confidence 0.50-0.55 (~352 productos). Capa 3.
    - Sets job.status = 'completed' (stage8 is the completion gate)
-   - Coverage on real dataset: 100% (14,323/14,324), total 5,662.15 m³
+   - Coverage on real dataset: 100% (14,323/14,324), total 5,653.22 m³
+   - **Exhaustive audit (2026-04-20)**: 14,695 products, 1,347 errors (9.2%), 1,996 suspicious (13.6%). Fix13-19 improved 366/1,347 errors (27.2%), 1 worse.
 
 ## Environment Variables
 
