@@ -649,6 +649,12 @@ router.get('/:jobId/export/custom', (req: Request, res: Response) => {
       if (tipo !== filterTipo) continue;
     }
 
+    // If filtering by high-trust capas (1 or 2 only), auto-exclude EXCLUIDO products.
+    // A product can be ERP/Gemini layer but still EXCLUIDO due to audit errors — never include those.
+    const isStrictCapaFilter = filterCapas && filterCapas.length > 0 &&
+      filterCapas.every(c => c === 1 || c === 2);
+    if (isStrictCapaFilter && computeFiabilidad({ s8, s4, auditFlags: auditErrorCods, cod }) === 'EXCLUIDO') continue;
+
     // Filter out EXCLUIDO products when include_excluded=false
     if (!includeExcluded && computeFiabilidad({ s8, s4, auditFlags: auditErrorCods, cod }) === 'EXCLUIDO') continue;
 
