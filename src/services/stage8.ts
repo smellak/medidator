@@ -13,7 +13,7 @@ const BATCH_SIZE = 5;
 const BATCH_DELAY_MS = 1000;
 const SAVE_EVERY = 50;
 
-type EstimationLayer = 'erp_ground_truth' | 'gemini_embalaje' | 'ratio_subfamilia' | 'ratio_tipo' | 'promedio_subfamilia' | 'promedio_tipo' | 'promedio_subfamilia_corregido' | 'ratio_subfamilia_corregido_fix4' | 'ratio_desde_descripcion_fix5' | 'ratio_residual_fix7' | 'ratio_composicion_ancho_fix8' | 'ratio_subfamilia_fix10_gemini_invalid' | 'ratio_subfamilia_fix11_too_big' | 'ratio_subfamilia_fix12_too_small' | 'rango_fisico_fix9' | 'erp_bogal_dm3_fix13' | 'vol_tipo_apple_fix19' | 'erp_placeholder_ampliado_fix18' | 'subfamilia_silla_fix17' | 'multiplicador_bultos_fix16' | 'dims_corregidas_fix15' | 'ratio_minimo_fisico_fix14' | 'dormitorio_completo_fix20' | 'composicion_supplier_fix21' | 'mesita_corregida_fix22' | 'electro_grande_infraestimado_fix23' | 'none';
+type EstimationLayer = 'erp_ground_truth' | 'gemini_embalaje' | 'ratio_subfamilia' | 'ratio_tipo' | 'promedio_subfamilia' | 'promedio_tipo' | 'promedio_subfamilia_corregido' | 'ratio_subfamilia_corregido_fix4' | 'ratio_desde_descripcion_fix5' | 'ratio_residual_fix7' | 'ratio_composicion_ancho_fix8' | 'ratio_subfamilia_fix10_gemini_invalid' | 'ratio_subfamilia_fix11_too_big' | 'ratio_subfamilia_fix12_too_small' | 'rango_fisico_fix9' | 'erp_bogal_dm3_fix13' | 'vol_tipo_apple_fix19' | 'erp_placeholder_ampliado_fix18' | 'subfamilia_silla_fix17' | 'multiplicador_bultos_fix16' | 'dims_corregidas_fix15' | 'ratio_minimo_fisico_fix14' | 'dormitorio_completo_fix20' | 'composicion_supplier_fix21' | 'mesita_corregida_fix22' | 'electro_grande_infraestimado_fix23' | 'erp_electro_aberrante_fix24' | 'mueble_grande_promedio_fix25' | 'supplier_01415_cap_fix26' | 'composicion_generica_fix27' | 'dims_profundidad_mm_fix28' | 'none';
 
 interface LogisticsEntry {
   'COD.ARTICULO': string;
@@ -554,6 +554,11 @@ export async function executeStage8(jobId: string): Promise<void> {
       fix21_composicion_supplier: 0,
       fix22_mesita_corregida: 0,
       fix23_electro_grande: 0,
+      fix24_erp_electro_aberrante: 0,
+      fix25_mueble_grande_promedio: 0,
+      fix26_supplier_01415_cap: 0,
+      fix27_composicion_generica: 0,
+      fix28_dims_profundidad_mm: 0,
     };
 
     const EXTERIOR_REGEX = /\b(PARASOL|PERGOLA|PÉRGOLA|CENADOR|GAZEBO|CARPA|TOLDO)\b/i;
@@ -1595,7 +1600,260 @@ export async function executeStage8(jobId: string): Promise<void> {
     console.log(`[Stage8] Fix23 applied: ${postValidationStats.fix23_electro_grande} electros grandes infraestimados corregidos`);
     if (fix23_examples.length > 0) { console.log('[Stage8] Fix23 examples:'); fix23_examples.forEach(ex => console.log(`  ${ex}`)); }
 
-    console.log(`[Stage8] Post-validation done: fix1=${postValidationStats.fix1_exterior_plegable}, fix2_nulled=${postValidationStats.fix2_electro_excessive_nulled}, fix2_cache=${postValidationStats.fix2_electro_excessive_from_cache}, fix3=${postValidationStats.fix3_mueble_tiny_corrected}, fix4=${postValidationStats.fix4_erp_placeholder_corrected}, fix5=${postValidationStats.fix5_dims_from_description}, fix7=${postValidationStats.fix7_residual_large_tiny}, fix8=${postValidationStats.fix8_composicion_ancho}, fix9=${postValidationStats.fix9_rango_fisico}, fix10=${postValidationStats.fix10_gemini_invalid}, fix11=${postValidationStats.fix11_ratio_too_big}, fix12=${postValidationStats.fix12_ratio_too_small}, fix13=${postValidationStats.fix13_bogal_erp_invalidated}, fix19=${postValidationStats.fix19_apple_vol_assigned}, fix18=${postValidationStats.fix18_erp_placeholder_extended}, fix17=${postValidationStats.fix17_silla_subfamilia}, fix16=${postValidationStats.fix16_split_multibulto}, fix15=${postValidationStats.fix15_frigo_alto_corrected}, fix14=${postValidationStats.fix14_ratio_minimo}, fix20=${postValidationStats.fix20_dormitorio_completo}, fix21=${postValidationStats.fix21_composicion_supplier}, fix22=${postValidationStats.fix22_mesita_corregida}, fix23=${postValidationStats.fix23_electro_grande}`);
+    // ---- Fix 24: ERP electro aberrante (vol claramente fuera del rango físico) ----
+    // ERP values that are clearly impossible for the product category (>2× max or <0.4× min)
+    // Only for erp_ground_truth + electrodomestico; uses Fix9 tier ranges as reference
+    const FIX24_CATEGORIES: Array<{ name: string; regex: RegExp; min: number; max: number }> = [
+      { name: 'FRIGO',        regex: /\b(FRIGORIFICO|FRIGORÍFICO|NEVERA|COMBINADO|AMERICANO)\b/i, min: 0.35, max: 1.80 },
+      { name: 'LAVADORA',     regex: /\b(LAVADORA|LAVASECADORA)\b/i,                               min: 0.25, max: 0.65 },
+      { name: 'LAVAVAJILLAS', regex: /\bLAVAVAJILLAS\b/i,                                          min: 0.25, max: 0.55 },
+      { name: 'HORNO_PLACA',  regex: /\bHORNO\b|VITROCERAMICA|PLACA INDUCCION|PLACA COCINA/i,      min: 0.03, max: 0.50 },
+      { name: 'MICROONDAS',   regex: /\bMICROONDAS\b/i,                                            min: 0.03, max: 0.18 },
+    ];
+    const fix24_examples: string[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+      if (e.estimation_layer !== 'erp_ground_truth') continue;
+      if (pm.tipo !== 'electrodomestico') continue;
+      if (e.m3_logistico === null || e.m3_logistico <= 0) continue;
+
+      for (const cat of FIX24_CATEGORIES) {
+        if (!cat.regex.test(pm.desc)) continue;
+        const vol = e.m3_logistico;
+        const isTooBig = vol > cat.max * 1.5;
+        const isTooSmall = vol < cat.min * 0.5;
+        if (!isTooBig && !isTooSmall) break;
+
+        // Determine correction: tier-based for FRIGO, midpoint for others
+        let nuevoVol: number;
+        if (cat.name === 'FRIGO') {
+          const heightMatch = pm.desc.match(/(?<!\d)(1[5-9]\d|2[0-3]\d)(?!\d)/);
+          const heightCm = heightMatch ? parseInt(heightMatch[1]) : 0;
+          nuevoVol = heightCm >= 200 ? 0.85 : heightCm >= 180 ? 0.75 : 0.65;
+          nuevoVol = Math.max(cat.min, Math.min(cat.max, nuevoVol));
+        } else {
+          nuevoVol = Math.round((cat.min + cat.max) / 2 * 10000) / 10000;
+        }
+
+        const volOriginal = e.m3_logistico;
+        if (layerCounts.erp_ground_truth > 0) layerCounts.erp_ground_truth--;
+        layerCounts.ratio_subfamilia++;
+        layerConfidences.ratio_subfamilia.push(0.40);
+
+        e.m3_logistico = nuevoVol;
+        e.estimation_layer = 'erp_electro_aberrante_fix24';
+        e.confidence = 0.40;
+        e.ratio_used = null;
+        e.ratio_source = `fix24_${cat.name}:erp=${volOriginal}_rango=[${cat.min},${cat.max}]`;
+        e.detail = `Fix24 ERP aberrante ${cat.name}: ${volOriginal}→${nuevoVol}m³ (rango [${cat.min},${cat.max}])`;
+
+        postValidationStats.fix24_erp_electro_aberrante++;
+        if (fix24_examples.length < 12) fix24_examples.push(`${pm.cod}: ${volOriginal}→${nuevoVol}m³ [${cat.name}] | ${pm.desc.substring(0, 60)}`);
+        break;
+      }
+    }
+    console.log(`[Stage8] Fix24 applied: ${postValidationStats.fix24_erp_electro_aberrante} ERP electros aberrantes corregidos`);
+    if (fix24_examples.length > 0) { console.log('[Stage8] Fix24 examples:'); fix24_examples.forEach(ex => console.log(`  ${ex}`)); }
+
+    // ---- Fix 28: Profundidad parseada en mm en lugar de cm ----
+    // When profundidad_cm < 5 from stage4 but desc has NxNxN with plausible depth ≥ 10cm
+    // Excludes flat products and products already corrected by Fix5/7/8
+    const FIX28_PLANOS_REGEX = /\b(CUADRO|ESPEJO|ALFOMBRA|PLAID|MANTA|LAMINA|LÁMINA|PANEL|CABECERO|TAPIZ)\b/i;
+    const FIX28_SKIP_LAYERS = new Set<EstimationLayer>([
+      'ratio_desde_descripcion_fix5', 'ratio_residual_fix7', 'ratio_composicion_ancho_fix8',
+      'erp_ground_truth', 'gemini_embalaje',
+    ]);
+    const FIX28_DIM_REGEX = /\b(\d{2,3})[xX×](\d{2,3})[xX×](\d{2,3})\b/;
+    const fix28_examples: string[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+      if (e.m3_logistico === null || e.m3_logistico <= 0) continue;
+      if (FIX28_SKIP_LAYERS.has(e.estimation_layer)) continue;
+      if (FIX28_PLANOS_REGEX.test(pm.desc)) continue;
+
+      // Check profundidad_cm < 5 from stage4 measures
+      const profCm28: number | null = (products[i] as any).measures?.profundidad_cm ?? null;
+      if (!profCm28 || profCm28 >= 5) continue;
+
+      // Extract NxNxN from desc
+      const dimMatch28 = pm.desc.match(FIX28_DIM_REGEX);
+      if (!dimMatch28) continue;
+      const sorted28 = [parseInt(dimMatch28[1]), parseInt(dimMatch28[2]), parseInt(dimMatch28[3])].sort((a, b) => a - b);
+      const [profNew28, anchoNew28, altoNew28] = sorted28;
+      if (profNew28 < 10) continue;
+      if (anchoNew28 < 20 || altoNew28 < 30) continue;
+
+      const vpCorr28 = Math.round(anchoNew28 * altoNew28 * profNew28 / 1000000 * 10000) / 10000;
+      const best28 = getBestRatio(pm.subfL2, pm.subfL1, pm.tipo);
+      if (!best28) continue;
+      const nuevoVol28 = Math.round(vpCorr28 * best28.r * 10000) / 10000;
+      if (nuevoVol28 <= 0.01) continue;
+      // Must represent a meaningful improvement (either up or down by 2×) vs current
+      const ratio28 = nuevoVol28 / e.m3_logistico;
+      if (ratio28 > 0.5 && ratio28 < 2) continue;
+
+      const volOriginal28 = e.m3_logistico;
+      const oldLayer28 = e.estimation_layer as keyof typeof layerCounts;
+      if (layerCounts[oldLayer28] !== undefined && (layerCounts[oldLayer28] as number) > 0) (layerCounts[oldLayer28] as number)--;
+      layerCounts.ratio_subfamilia++;
+      layerConfidences.ratio_subfamilia.push(0.45);
+
+      e.m3_logistico = nuevoVol28;
+      e.estimation_layer = 'dims_profundidad_mm_fix28';
+      e.confidence = 0.45;
+      e.ratio_used = best28.r;
+      e.ratio_source = `fix28_prof_mm:${anchoNew28}x${altoNew28}x${profNew28}cm_r=${best28.r}`;
+      e.detail = `Fix28 prof_mm→cm: prof=${profCm28}cm→${profNew28}cm, dims=${anchoNew28}x${altoNew28}x${profNew28}, vp=${vpCorr28}×${best28.r}=${nuevoVol28}m³ (era ${volOriginal28})`;
+
+      postValidationStats.fix28_dims_profundidad_mm++;
+      if (fix28_examples.length < 12) fix28_examples.push(`${pm.cod}: ${volOriginal28}→${nuevoVol28}m³ [prof ${profCm28}→${profNew28}cm] | ${pm.desc.substring(0, 55)}`);
+    }
+    console.log(`[Stage8] Fix28 applied: ${postValidationStats.fix28_dims_profundidad_mm} profundidades mm→cm corregidas`);
+    if (fix28_examples.length > 0) { console.log('[Stage8] Fix28 examples:'); fix28_examples.forEach(ex => console.log(`  ${ex}`)); }
+
+    // ---- Fix 25: Muebles grandes con promedio subfamilia contaminado + NxNxN extractible ----
+    // Targets large furniture in promedio layers with a parseable NxNxN in description
+    // giving a much larger volume (≥3× current), within mueble physical range [0.3, 5.0 m³]
+    const FIX25_MUEBLE_REGEX = /\b(ARMARIO|APARADOR|LIBRERIA|LIBRERÍA|VITRINA|CAMA|CANAPE|CANAPÉ|SOFA|SOFÁ|SALON|SALÓN|SINFONIER|DORMITORIO|CONJUNTO)\b/i;
+    const FIX25_PROMEDIO_LAYERS = new Set<EstimationLayer>([
+      'promedio_subfamilia', 'promedio_tipo', 'promedio_subfamilia_corregido',
+    ]);
+    const FIX25_DIM_REGEX = /\b(\d{2,3})[xX×](\d{2,3})[xX×](\d{2,3})\b/;
+    const fix25_examples: string[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+      if (!FIX25_PROMEDIO_LAYERS.has(e.estimation_layer)) continue;
+      if (!FIX25_MUEBLE_REGEX.test(pm.desc)) continue;
+      if (pm.tipo !== 'mueble') continue;
+      if (e.m3_logistico === null || e.m3_logistico <= 0) continue;
+
+      const dimMatch25 = pm.desc.match(FIX25_DIM_REGEX);
+      if (!dimMatch25) continue;
+      const sorted25 = [parseInt(dimMatch25[1]), parseInt(dimMatch25[2]), parseInt(dimMatch25[3])].sort((a, b) => a - b);
+      const [profNew25, anchoNew25, altoNew25] = sorted25;
+
+      // Strict dimension minimums — must look like real furniture
+      if (anchoNew25 < 50 || altoNew25 < 60 || profNew25 < 30) continue;
+
+      const vpNew25 = Math.round(anchoNew25 * altoNew25 * profNew25 / 1000000 * 10000) / 10000;
+      const best25 = getBestRatio(pm.subfL2, pm.subfL1, pm.tipo);
+      const ratio25 = best25 ? best25.r : 0.85;
+      const nuevoVol25 = Math.round(vpNew25 * ratio25 * 10000) / 10000;
+
+      // Safety checks: range [0.3, 5.0] AND must be ≥2× improvement
+      if (nuevoVol25 < 0.3 || nuevoVol25 > 5.0) continue;
+      if (nuevoVol25 < e.m3_logistico * 2) continue;
+
+      const volOriginal25 = e.m3_logistico;
+      const oldLayer25 = e.estimation_layer as keyof typeof layerCounts;
+      if (layerCounts[oldLayer25] !== undefined && (layerCounts[oldLayer25] as number) > 0) (layerCounts[oldLayer25] as number)--;
+      layerCounts.ratio_subfamilia++;
+      layerConfidences.ratio_subfamilia.push(0.35);
+
+      e.m3_logistico = nuevoVol25;
+      e.estimation_layer = 'mueble_grande_promedio_fix25';
+      e.confidence = 0.35;
+      e.ratio_used = ratio25;
+      e.ratio_source = `fix25_mueble_grande:${anchoNew25}x${altoNew25}x${profNew25}cm_r=${ratio25}`;
+      e.detail = `Fix25 mueble grande promedio→dims: ${anchoNew25}×${altoNew25}×${profNew25}cm, vp=${vpNew25}×${ratio25}=${nuevoVol25}m³ (era ${volOriginal25})`;
+
+      postValidationStats.fix25_mueble_grande_promedio++;
+      if (fix25_examples.length < 12) fix25_examples.push(`${pm.cod}: ${volOriginal25}→${nuevoVol25}m³ [${anchoNew25}x${altoNew25}x${profNew25}] | ${pm.desc.substring(0, 55)}`);
+    }
+    console.log(`[Stage8] Fix25 applied: ${postValidationStats.fix25_mueble_grande_promedio} muebles grandes promedio→dims corregidos`);
+    if (fix25_examples.length > 0) { console.log('[Stage8] Fix25 examples:'); fix25_examples.forEach(ex => console.log(`  ${ex}`)); }
+
+    // ---- Fix 27: Composiciones genéricas de todos los suppliers ----
+    // Extends Fix21 to ALL suppliers conservatively (1.2 m³, conf 0.25)
+    const FIX27_COMP_REGEX = /\bCOMPOSICI[OÓ]N?\b/i;
+    const FIX27_SKIP_LAYERS = new Set<EstimationLayer>([
+      'erp_ground_truth', 'gemini_embalaje',
+      'ratio_composicion_ancho_fix8', 'composicion_supplier_fix21', 'dormitorio_completo_fix20',
+    ]);
+    const fix27_examples: string[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+      if (FIX27_SKIP_LAYERS.has(e.estimation_layer)) continue;
+      if (!FIX27_COMP_REGEX.test(pm.desc)) continue;
+      if (e.m3_logistico === null) continue;
+      if (e.m3_logistico >= 0.5) continue;
+
+      const volOriginal27 = e.m3_logistico;
+      const nuevoVol27 = 1.2;
+
+      const oldLayer27 = e.estimation_layer as keyof typeof layerCounts;
+      if (layerCounts[oldLayer27] !== undefined && (layerCounts[oldLayer27] as number) > 0) (layerCounts[oldLayer27] as number)--;
+      layerCounts.ratio_subfamilia++;
+      layerConfidences.ratio_subfamilia.push(0.25);
+
+      e.m3_logistico = nuevoVol27;
+      e.estimation_layer = 'composicion_generica_fix27';
+      e.confidence = 0.25;
+      e.ratio_used = null;
+      e.ratio_source = 'fix27_composicion_generica';
+      e.detail = `Fix27 composición genérica vol<0.5: ${volOriginal27}→${nuevoVol27}m³`;
+
+      postValidationStats.fix27_composicion_generica++;
+      if (fix27_examples.length < 12) fix27_examples.push(`${pm.cod}: ${volOriginal27}→${nuevoVol27}m³ | ${pm.desc.substring(0, 70)}`);
+    }
+    console.log(`[Stage8] Fix27 applied: ${postValidationStats.fix27_composicion_generica} composiciones genéricas corregidas`);
+    if (fix27_examples.length > 0) { console.log('[Stage8] Fix27 examples:'); fix27_examples.forEach(ex => console.log(`  ${ex}`)); }
+
+    // ---- Fix 26: Supplier 01415 (Infiniton) caps por categoría ----
+    // Supplier 01415 has mixed categories causing bad ratio estimates; cap to realistic ranges
+    const FIX26_CATEGORIES: Array<{ name: string; regex: RegExp; min: number; max: number }> = [
+      { name: 'VENTILADOR',    regex: /\bVENTILADOR\b/i,                          min: 0.02,   max: 0.35  },
+      { name: 'PLANCHA',       regex: /\bPLANCHA\b/i,                              min: 0.005,  max: 0.08  },
+      { name: 'ROBOT',         regex: /\bROBOT\b/i,                                min: 0.02,   max: 0.12  },
+      { name: 'PATINETE',      regex: /\bPATINETE\b/i,                             min: 0.08,   max: 0.50  },
+      { name: 'SECADOR',       regex: /\bSECADOR\b/i,                              min: 0.001,  max: 0.015 },
+      { name: 'BATIDORA',      regex: /\bBATIDORA\b/i,                             min: 0.002,  max: 0.02  },
+      { name: 'BASCULA',       regex: /\bBÁSCULA|BASCULA\b/i,                     min: 0.0005, max: 0.008 },
+      { name: 'CALEFACTOR',    regex: /\bCALEFACTOR\b/i,                           min: 0.008,  max: 0.10  },
+      { name: 'FREIDORA_AIRE', regex: /FREIDORA DE AIRE|AIR FRYER/i,              min: 0.008,  max: 0.05  },
+      { name: 'ASPIRADOR',     regex: /\bASPIRADOR\b/i,                            min: 0.02,   max: 0.25  },
+    ];
+    const fix26_examples: string[] = [];
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      const pm = productMeta[i];
+      if (!pm.cod.startsWith('01415')) continue;
+      if (e.m3_logistico === null || e.m3_logistico <= 0) continue;
+      // Only apply to ratio/rango layers — not ERP/Gemini/already-fixed
+      if (!e.estimation_layer.startsWith('ratio_subfamilia') && e.estimation_layer !== 'rango_fisico_fix9') continue;
+
+      for (const cat of FIX26_CATEGORIES) {
+        if (!cat.regex.test(pm.desc)) continue;
+        const vol = e.m3_logistico;
+        if (vol >= cat.min && vol <= cat.max) break; // within range, no action
+        const clamped = vol > cat.max ? cat.max : cat.min;
+        const volOriginal26 = e.m3_logistico;
+
+        const oldLayer26 = e.estimation_layer as keyof typeof layerCounts;
+        if (layerCounts[oldLayer26] !== undefined && (layerCounts[oldLayer26] as number) > 0) (layerCounts[oldLayer26] as number)--;
+        layerCounts.ratio_subfamilia++;
+        layerConfidences.ratio_subfamilia.push(0.35);
+
+        e.m3_logistico = clamped;
+        e.estimation_layer = 'supplier_01415_cap_fix26';
+        e.confidence = 0.35;
+        e.ratio_used = null;
+        e.ratio_source = `fix26_01415_${cat.name}:rango=[${cat.min},${cat.max}]`;
+        e.detail = `Fix26 supplier 01415 ${cat.name}: ${volOriginal26}→${clamped}m³ (${vol > cat.max ? 'cap max' : 'cap min'})`;
+
+        postValidationStats.fix26_supplier_01415_cap++;
+        if (fix26_examples.length < 12) fix26_examples.push(`${pm.cod}: ${volOriginal26}→${clamped}m³ [${cat.name}] | ${pm.desc.substring(0, 55)}`);
+        break;
+      }
+    }
+    console.log(`[Stage8] Fix26 applied: ${postValidationStats.fix26_supplier_01415_cap} 01415 productos caps aplicados`);
+    if (fix26_examples.length > 0) { console.log('[Stage8] Fix26 examples:'); fix26_examples.forEach(ex => console.log(`  ${ex}`)); }
+
+    console.log(`[Stage8] Post-validation done: fix1=${postValidationStats.fix1_exterior_plegable}, fix2_nulled=${postValidationStats.fix2_electro_excessive_nulled}, fix2_cache=${postValidationStats.fix2_electro_excessive_from_cache}, fix3=${postValidationStats.fix3_mueble_tiny_corrected}, fix4=${postValidationStats.fix4_erp_placeholder_corrected}, fix5=${postValidationStats.fix5_dims_from_description}, fix7=${postValidationStats.fix7_residual_large_tiny}, fix8=${postValidationStats.fix8_composicion_ancho}, fix9=${postValidationStats.fix9_rango_fisico}, fix10=${postValidationStats.fix10_gemini_invalid}, fix11=${postValidationStats.fix11_ratio_too_big}, fix12=${postValidationStats.fix12_ratio_too_small}, fix13=${postValidationStats.fix13_bogal_erp_invalidated}, fix19=${postValidationStats.fix19_apple_vol_assigned}, fix18=${postValidationStats.fix18_erp_placeholder_extended}, fix17=${postValidationStats.fix17_silla_subfamilia}, fix16=${postValidationStats.fix16_split_multibulto}, fix15=${postValidationStats.fix15_frigo_alto_corrected}, fix14=${postValidationStats.fix14_ratio_minimo}, fix20=${postValidationStats.fix20_dormitorio_completo}, fix21=${postValidationStats.fix21_composicion_supplier}, fix22=${postValidationStats.fix22_mesita_corregida}, fix23=${postValidationStats.fix23_electro_grande}, fix24=${postValidationStats.fix24_erp_electro_aberrante}, fix25=${postValidationStats.fix25_mueble_grande_promedio}, fix26=${postValidationStats.fix26_supplier_01415_cap}, fix27=${postValidationStats.fix27_composicion_generica}, fix28=${postValidationStats.fix28_dims_profundidad_mm}`);
 
     // ==========================================
     // Summary
