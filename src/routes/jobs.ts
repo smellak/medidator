@@ -428,6 +428,31 @@ router.get('/:jobId/export', (req: Request, res: Response) => {
 // GET /jobs/:jobId/export/custom?columns=...&format=csv|xlsx&capa=&confidence_min=&tipo=
 // ============================================================
 
+// Placeholder volumes that appear when subfamilia average is contaminated and product has no dims.
+const PLACEHOLDER_PROMEDIO_VOLS = new Set([0.0816, 0.8832, 0.7484, 0.6469, 0.3672]);
+
+function computeFiabilidad(
+  { s8, s4, auditFlags, cod }: { s8: any; s4: any; auditFlags?: Set<string>; cod: string }
+): 'ALTA' | 'MEDIA' | 'REVISAR' | 'EXCLUIDO' {
+  const layer: string = s8?.estimation_layer ?? '';
+  const conf: number = s8?.confidence || 0;
+  // Products with known audit errors → EXCLUIDO (volume set to null in export)
+  if (auditFlags?.has(cod)) return 'EXCLUIDO';
+  // Promedio products with placeholder volume and no product dimensions → EXCLUIDO
+  if (layer === 'promedio_subfamilia' || layer === 'promedio_tipo' || layer === 'promedio_subfamilia_corregido') {
+    const vol = s8?.m3_logistico;
+    if (vol !== null && vol !== undefined) {
+      const rounded = Math.round(Number(vol) * 10000) / 10000;
+      if (PLACEHOLDER_PROMEDIO_VOLS.has(rounded) && !s4?.measures?.ancho_cm) return 'EXCLUIDO';
+    }
+  }
+  if (layer === 'erp_ground_truth' && conf >= 0.95) return 'ALTA';
+  if (layer === 'gemini_embalaje' && conf >= 0.80) return 'ALTA';
+  if (conf < 0.25) return 'REVISAR';
+  if (layer.includes('fix') && conf >= 0.45) return 'MEDIA';
+  return 'MEDIA';
+}
+
 // Catalog of available columns and how to extract them.
 // Each extractor receives the merged record { stage4: any, stage8: any, cod: string }.
 type ColumnExtractor = (r: { cod: string; s4: any; s8: any; auditFlags?: Set<string> }) => any;
@@ -461,7 +486,10 @@ const COLUMN_CATALOG: Record<string, ColumnExtractor> = {
     return v !== undefined && v !== null && v !== '' ? Number(v) : '';
   },
   // Logística
-  VOLUMEN_PAQUETE_M3: ({ s8 }) => (s8?.m3_logistico !== null && s8?.m3_logistico !== undefined ? s8.m3_logistico : ''),
+  VOLUMEN_PAQUETE_M3: ({ s8, s4, auditFlags, cod }) => {
+    if (computeFiabilidad({ s8, s4, auditFlags, cod }) === 'EXCLUIDO') return '';
+    return s8?.m3_logistico !== null && s8?.m3_logistico !== undefined ? s8.m3_logistico : '';
+  },
   BULTOS: ({ s4, s8 }) => {
     if (s8?.bultos !== undefined && s8?.bultos !== null) return s8.bultos;
     const v = s4?.original?.['Bultos'];
@@ -488,16 +516,7 @@ const COLUMN_CATALOG: Record<string, ColumnExtractor> = {
   },
   CATEGORY: ({ s4 }) => s4?.category ?? '',
   // Fiabilidad del volumen logístico
-  FIABILIDAD: ({ s8, auditFlags, cod }) => {
-    const layer: string = s8?.estimation_layer ?? '';
-    const conf: number = s8?.confidence || 0;
-    if (layer === 'erp_ground_truth' && conf >= 0.95) return 'ALTA';
-    if (layer === 'gemini_embalaje' && conf >= 0.80) return 'ALTA';
-    if (auditFlags?.has(cod)) return 'REVISAR';
-    if (conf < 0.25) return 'REVISAR';
-    if (layer.includes('fix') && conf >= 0.45) return 'MEDIA';
-    return 'MEDIA';
-  },
+  FIABILIDAD: ({ s8, s4, auditFlags, cod }) => computeFiabilidad({ s8, s4, auditFlags, cod }),
 };
 
 const DEFAULT_COLUMNS = ['COD_ARTICULO', 'DESCRIPCION', 'VOLUMEN_PAQUETE_M3'];
@@ -549,6 +568,9 @@ router.get('/:jobId/export/custom', (req: Request, res: Response) => {
     ? parseFloat(String(req.query.confidence_min))
     : null;
   const filterTipo = req.query.tipo ? String(req.query.tipo).toLowerCase() : null;
+  const includeExcluded = req.query.include_excluded !== undefined
+    ? String(req.query.include_excluded).toLowerCase() !== 'false'
+    : true;
 
   // --- Load source data ---
   const DATA_DIR = path.resolve(process.cwd(), 'data');
@@ -626,6 +648,9 @@ router.get('/:jobId/export/custom', (req: Request, res: Response) => {
       const tipo = String(s4?.product_type || '').toLowerCase();
       if (tipo !== filterTipo) continue;
     }
+
+    // Filter out EXCLUIDO products when include_excluded=false
+    if (!includeExcluded && computeFiabilidad({ s8, s4, auditFlags: auditErrorCods, cod }) === 'EXCLUIDO') continue;
 
     const row: Record<string, any> = {};
     for (const col of columns) {
@@ -806,7 +831,7 @@ router.get('/:jobId/export/audit-report', (req: Request, res: Response) => {
     return 'Revisar y corregir M3 manualmente';
   };
 
-  const headers = ['COD_ARTICULO', 'DESCRIPCION', 'VOLUMEN_ACTUAL_M3', 'VOLUMEN_AUDITADO_M3', 'VOLUMEN_ESPERADO_MIN', 'VOLUMEN_ESPERADO_MAX', 'SEVERIDAD', 'RAZON', 'FIX_SUGERIDO'];
+  const headers = ['COD_ARTICULO', 'DESCRIPCION', 'VOLUMEN_ACTUAL_M3', 'VOLUMEN_AUDITADO_M3', 'VOLUMEN_ESPERADO_MIN', 'VOLUMEN_ESPERADO_MAX', 'EXCLUIDO_CATALOGO', 'SEVERIDAD', 'RAZON', 'FIX_SUGERIDO'];
   const csvRows = [headers.join(';')];
 
   for (const a of errors) {
@@ -817,6 +842,13 @@ router.get('/:jobId/export/audit-report', (req: Request, res: Response) => {
     const volEsperado: number | null = a.VOL_esperado ?? null;
     const volMin = volEsperado != null ? Math.round(volEsperado * 0.75 * 10000) / 10000 : '';
     const volMax = volEsperado != null ? Math.round(volEsperado * 1.40 * 10000) / 10000 : '';
+    // EXCLUIDO_CATALOGO: NO if current vol is within expected range (auto-fixed by Fix1-28), else SI
+    let excluido = 'SI';
+    if (volEsperado != null && volActual !== '') {
+      const vMin55 = volEsperado * 0.55;
+      const vMax165 = volEsperado * 1.65;
+      if (Number(volActual) >= vMin55 && Number(volActual) <= vMax165) excluido = 'NO';
+    }
     const sev = a.severidad || 'ERROR';
     const razon = sanitize(a.razon || '');
     const fix = suggestFix(a.razon || '');
@@ -828,6 +860,7 @@ router.get('/:jobId/export/audit-report', (req: Request, res: Response) => {
       volAuditado,
       volMin,
       volMax,
+      excluido,
       sev,
       `"${razon.replace(/"/g, '""')}"`,
       `"${fix.replace(/"/g, '""')}"`,

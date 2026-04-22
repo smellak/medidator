@@ -59,12 +59,12 @@ const COLUMN_GROUPS: ColumnGroup[] = [
       { id: 'NUM_COMPONENTS', label: 'NUM_COMPONENTS' },
       { id: 'OUTLIER_WARNING', label: 'OUTLIER_WARNING (SI/NO)' },
       { id: 'CATEGORY', label: 'CATEGORY' },
-      { id: 'FIABILIDAD', label: 'FIABILIDAD (ALTA/MEDIA/REVISAR)' },
+      { id: 'FIABILIDAD', label: 'FIABILIDAD (ALTA/MEDIA/REVISAR/EXCLUIDO)' },
     ],
   },
 ];
 
-const PRESETS: Record<string, { label: string; columns: string[] }> = {
+const PRESETS: Record<string, { label: string; columns: string[]; includeExcluded?: boolean }> = {
   basic: {
     label: 'Logística básica',
     columns: ['COD_ARTICULO', 'DESCRIPCION', 'VOLUMEN_PAQUETE_M3'],
@@ -81,6 +81,11 @@ const PRESETS: Record<string, { label: string; columns: string[] }> = {
     label: 'Logística con alertas',
     columns: ['COD_ARTICULO', 'DESCRIPCION', 'VOLUMEN_PAQUETE_M3', 'FIABILIDAD'],
   },
+  fiables: {
+    label: 'Solo fiables',
+    columns: ['COD_ARTICULO', 'DESCRIPCION', 'VOLUMEN_PAQUETE_M3', 'FIABILIDAD'],
+    includeExcluded: false,
+  },
   all: {
     label: 'Todo',
     columns: COLUMN_GROUPS.flatMap(g => g.cols.map(c => c.id)),
@@ -95,6 +100,7 @@ export default function ExportDialog({ jobId, onClose }: Props) {
   const [capaFilter, setCapaFilter] = useState<string>(''); // '' | '1' | '2' | '3' | '4' | '1,2'
   const [confMin, setConfMin] = useState<number>(0);
   const [tipoFilter, setTipoFilter] = useState<Tipo>('');
+  const [includeExcluded, setIncludeExcluded] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
 
@@ -110,6 +116,9 @@ export default function ExportDialog({ jobId, onClose }: Props) {
 
   const applyPreset = (key: keyof typeof PRESETS) => {
     setSelected(new Set(PRESETS[key].columns));
+    if (PRESETS[key].includeExcluded !== undefined) {
+      setIncludeExcluded(PRESETS[key].includeExcluded!);
+    }
   };
 
   const buildUrl = (): string => {
@@ -122,6 +131,7 @@ export default function ExportDialog({ jobId, onClose }: Props) {
     if (capaFilter) qs.set('capa', capaFilter);
     if (confMin > 0) qs.set('confidence_min', String(confMin));
     if (tipoFilter) qs.set('tipo', tipoFilter);
+    if (!includeExcluded) qs.set('include_excluded', 'false');
     return `/jobs/${jobId}/export/custom?${qs.toString()}`;
   };
 
@@ -298,6 +308,19 @@ export default function ExportDialog({ jobId, onClose }: Props) {
                   <option value="accesorio">Accesorio</option>
                   <option value="otro">Otro</option>
                 </select>
+              </div>
+
+              <div className="bg-surface border border-border rounded-md p-3">
+                <label className="text-xs font-medium text-text-primary block mb-1">Productos EXCLUIDO</label>
+                <label className="flex items-center gap-2 text-xs cursor-pointer mt-1.5">
+                  <input
+                    type="checkbox"
+                    checked={includeExcluded}
+                    onChange={e => setIncludeExcluded(e.target.checked)}
+                    className="w-3.5 h-3.5 accent-chs-primary"
+                  />
+                  <span className="text-text-primary">Incluir en export</span>
+                </label>
               </div>
             </div>
           </div>
