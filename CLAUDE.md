@@ -123,9 +123,14 @@ validate_200.js         # Validation script: 200-product coherence check via Gem
      - **Fix 21 — Composiciones supplier conocido vol < 0.5**: suppliers 00362/00300/04376/00010 + COMPOSICION + vol < 0.5 m³ (no ERP) → 1.5 m³ (2.0 si JORDAN EVO). estimation_layer='composicion_supplier_fix21', confidence 0.30 (~31 productos). Capa 3.
      - **Fix 22 — Mesitas placeholder promedio**: MESITA/MESILLA + vol ≥ 0.50 m³ desde capa promedio, misma vol en ≥5 productos del mismo supplier → 0.10 m³ (o vp×1.2 si vp disponible). estimation_layer='mesita_corregida_fix22', confidence 0.35 (~20 productos). Capa 3.
      - **Fix 23 — Electros grandes (150+ cm) infraestimados**: FRIGORIFICO/NEVERA/COMBINADO con altura ≥ 150 cm en descripción y vol < 0.60 m³ → vol basado en dims (ancho×altura×prof×1.15) o por tier (200+cm→0.85, 180+→0.75, 150+→0.65). Aplica a ERP cuando vol < 0.10 (físicamente imposible). estimation_layer='electro_grande_infraestimado_fix23', confidence 0.40 (~43 productos). Capa 3.
+     - **Fix 24 — ERP electro aberrante**: layer=erp_ground_truth + tipo=electrodomestico + vol>cat.max×1.5 o vol<cat.min×0.5 (categorías: FRIGO/LAVADORA/LAVAVAJILLAS/HORNO_PLACA/MICROONDAS) → corregir con tier de Fix23 (FRIGO) o midpoint de rango. estimation_layer='erp_electro_aberrante_fix24', confidence 0.40 (~4 productos). Mueve capa 1 → capa 3.
+     - **Fix 25 — Muebles grandes en promedio con NxNxN en desc**: layer=promedio* + tipo=mueble + keyword ARMARIO/CAMA/SOFA/etc + NxNxN extraíble (ancho≥50, alto≥60, prof≥30) + nuevo vol ≥2× actual + nuevo vol en [0.3, 5.0] → dims×ratio_subfamilia. estimation_layer='mueble_grande_promedio_fix25', confidence 0.35 (~17 productos). Capa 3.
+     - **Fix 26 — Supplier 01415 (Infiniton) caps por categoría**: supplier 01415 + layer ratio_subfamilia + vol fuera de rango por categoría (VENTILADOR/PLANCHA/ROBOT/PATINETE/SECADOR/BATIDORA/BASCULA/CALEFACTOR/FREIDORA_AIRE/ASPIRADOR) → clamp a rango. estimation_layer='supplier_01415_cap_fix26', confidence 0.35 (~58 productos). Capa 3.
+     - **Fix 27 — Composiciones genéricas todos suppliers**: COMPOSICION/COMPOSICIÓN + vol < 0.5 m³ + no ERP/Gemini/Fix8/Fix21/Fix20 → 1.2 m³ (conservador, todos suppliers). estimation_layer='composicion_generica_fix27', confidence 0.25 (~24 productos). Capa 3.
+     - **Fix 28 — Profundidad parseada en mm**: profundidad_cm < 5 en stage4 + NxNxN en desc con prof extraída ≥ 10cm + no CUADRO/ESPEJO/ALFOMBRA/PANEL/CABECERO + no Fix5/7/8/ERP/Gemini → recalcular dims y aplicar ratio. estimation_layer='dims_profundidad_mm_fix28', confidence 0.45 (~34 productos). Capa 3.
    - Sets job.status = 'completed' (stage8 is the completion gate)
-   - Coverage on real dataset: 100% (14,323/14,324), total 5,746.12 m³
-   - **Exhaustive audit (2026-04-20)**: 14,695 products, 1,347 errors (9.2%), 1,996 suspicious (13.6%). Fix13-23 improved 439/1,220 unique ERRORs (36.0%, +6% vs Fix13-19).
+   - Coverage on real dataset: 100% (14,323/14,324), total **5,800.73 m³**
+   - **Exhaustive audit (2026-04-22)**: Fix1-28 mejora 390/1,220 unique ERRORs (32.0%, comparado con 366 Fix1-23). Nota: métrica estricta (vol dentro de [×0.55, ×1.65] esperado). 0 regresiones. 137 productos corregidos por Fix24-28.
 
 ## Environment Variables
 
@@ -173,7 +178,7 @@ GEMINI_API_KEY=... node validate_200.js
 - **Coolify app UUID**: `wk8sggsg4koowwccssww4c4s`
 - **Domain**: `medidas.centrohogarsanchez.es`
 - **Docker**: Multi-stage build (deps → builder → runner), Node 20 Alpine
-- **Current container**: `wk8sggsg4koowwccssww4c4s-171705099445`
+- **Current container**: `wk8sggsg4koowwccssww4c4s-023820721841`
 
 ### Traefik ForwardAuth
 
